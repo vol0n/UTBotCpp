@@ -254,10 +254,16 @@ Status Server::TestsGenServiceImpl::ProcessBaseTestRequest(BaseTestGen &testGen,
         linker.prepareArtifacts();
         linker.writeMakefiles();
         auto testMethods = linker.getTestMethods();
+
+        bool interactiveMode = false;
+        if (dynamic_cast<ProjectTestGen*>(&testGen) != nullptr) {
+            interactiveMode = true;
+        }
+
         KleeRunner kleeRunner{ testGen.projectContext, testGen.settingsContext,
                                testGen.serverBuildDir };
         kleeRunner.runKlee(testMethods, testGen.tests, generator, testGen.methodNameToReturnTypeMap,
-                           lineInfo, testsWriter, testGen.isBatched());
+                           lineInfo, testsWriter, testGen.isBatched(), interactiveMode);
     } catch (const ExecutionProcessException &e) {
         string command = e.what();
         return Status(StatusCode::FAILED_PRECONDITION,
