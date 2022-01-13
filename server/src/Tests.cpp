@@ -850,7 +850,7 @@ KTestObjectParser::parseTestCaseParams(const UTBotKTest &ktest,
         processGlobalParamPostValue(testCaseDescription, globalParam, rawKleeParams);
     }
 
-    processSymbolicStdin(testCaseDescription, rawKleeParams);
+    //processSymbolicStdin(testCaseDescription, rawKleeParams);
     processStubParamValue(testCaseDescription, methodNameToReturnTypeMap, rawKleeParams);
     if (!types::TypesHandler::skipTypeInReturn(methodDescription.returnType)) {
         const auto kleeResParam = getKleeParamOrThrow(rawKleeParams, KleeUtils::RESULT_VARIABLE_NAME);
