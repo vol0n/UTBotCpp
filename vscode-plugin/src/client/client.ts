@@ -267,7 +267,7 @@ export class Client {
 
     private async provideGTestChannel(): Promise<void> {
         const logChannelRequest = new LogChannelRequest();
-        logChannelRequest.setLoglevel('MAX');
+        logChannelRequest.setLoglevel('INFO');
         return new Promise<void>((resolve) => {
             const dummyRequest = new DummyRequest();
             this.testsService.closeGTestChannel(dummyRequest, this.metadata, (err) => {

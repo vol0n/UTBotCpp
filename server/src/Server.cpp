@@ -336,10 +336,10 @@ void Server::logToClient(void *channel, const loguru::Message &message) {
     if (data == nullptr) {
         throw BaseException("Couldn't handle logging to client, data is null");
     }
-    vector <char> thread_name(data->client.size());
-    loguru::get_thread_name(thread_name.data(), sizeof(data->client.size()), false);
+    vector <char> thread_name(buffer_size);
+    loguru::get_thread_name(thread_name.data(), buffer_size, false);
 
-    if (std::string(thread_name.begin(), thread_name.end()) == data->client &&
+    if (std::string(thread_name.data()) == data->client &&
         std::string(message.filename) != std::string(GTestLogger::fileName())) {
         LogEntry logEntry;
         std::string extractedMessage = extractMessage(message);
@@ -354,10 +354,10 @@ void Server::gtestLog(void *channel, const loguru::Message &message) {
     if (data == nullptr) {
         throw BaseException("Can't interpret gtest log channel");
     }
-    vector <char> thread_name(data->client.size());
-    loguru::get_thread_name(thread_name.data(), sizeof(data->client.size()), false);
+    vector <char> thread_name(buffer_size);
+    loguru::get_thread_name(thread_name.data(), buffer_size, false);
 
-    if (std::string(thread_name.begin(), thread_name.end()) == data->client &&
+    if (std::string(thread_name.data()) == data->client &&
         std::string(message.filename) == std::string(GTestLogger::fileName())) {
         LogEntry logEntry;
         logEntry.set_message(message.message);
@@ -437,7 +437,7 @@ Status Server::TestsGenServiceImpl::OpenGTestChannel(ServerContext *context,
                                                      ServerWriter<LogEntry> *writer) {
     ServerUtils::setThreadOptions(context, testMode);
     return provideLoggingCallbacks(gtestLogPrefix, writer, request->loglevel(), gtestLog,
-                                   openedGTestChannel, false);
+                                   openedGTestChannel, true);
 }
 
 Status Server::TestsGenServiceImpl::CloseGTestChannel(ServerContext *context,
