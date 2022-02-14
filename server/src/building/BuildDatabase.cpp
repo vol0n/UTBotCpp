@@ -553,7 +553,12 @@ void BuildDatabase::ObjectFileInfo::addFile(fs::path file) {
 }
 
 void BuildDatabase::TargetInfo::addFile(fs::path file) {
-    files.insert(std::move(file));
+    if ((fs::status(file).permissions() & fs::perms::group_write) == fs::perms::none) {
+        // The file's user group doesn't have write permission, assume it's installed library
+        installedFiles.insert(std::move(file));
+    } else {
+        files.insert(std::move(file));
+    }
 }
 
 fs::path BuildDatabase::TargetInfo::getOutput() const {

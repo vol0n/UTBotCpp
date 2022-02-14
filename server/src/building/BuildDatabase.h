@@ -76,6 +76,10 @@ public:
         // Source files, object files and libraries that current command depends on
         tsl::ordered_set<fs::path, HashUtils::PathHash> files;
 
+        // Libraries that current command depends on, but those are already installed and not built
+        // within project
+        tsl::ordered_set<fs::path, HashUtils::PathHash> installedFiles;
+
         // Units which contains current library
         std::vector <fs::path> parentLinkUnits;
 
