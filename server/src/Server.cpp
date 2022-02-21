@@ -336,8 +336,8 @@ void Server::logToClient(void *channel, const loguru::Message &message) {
     if (data == nullptr) {
         throw BaseException("Couldn't handle logging to client, data is null");
     }
-    vector <char> thread_name(buffer_size);
-    loguru::get_thread_name(thread_name.data(), buffer_size, false);
+    vector <char> thread_name(LOGURU_BUFFER_SIZE);
+    loguru::get_thread_name(thread_name.data(), LOGURU_BUFFER_SIZE, false);
 
     if (std::string(thread_name.data()) == data->client &&
         std::string(message.filename) != std::string(GTestLogger::fileName())) {
@@ -354,8 +354,8 @@ void Server::gtestLog(void *channel, const loguru::Message &message) {
     if (data == nullptr) {
         throw BaseException("Can't interpret gtest log channel");
     }
-    vector <char> thread_name(buffer_size);
-    loguru::get_thread_name(thread_name.data(), buffer_size, false);
+    vector <char> thread_name(LOGURU_BUFFER_SIZE);
+    loguru::get_thread_name(thread_name.data(), LOGURU_BUFFER_SIZE, false);
 
     if (std::string(thread_name.data()) == data->client &&
         std::string(message.filename) == std::string(GTestLogger::fileName())) {
@@ -364,6 +364,15 @@ void Server::gtestLog(void *channel, const loguru::Message &message) {
         std::lock_guard<std::mutex> guard(data->writerMutex);
         data->writer->Write(logEntry);
     }
+}
+
+loguru::Verbosity MaxNameToVerbosityCallback(const char* name) {
+    if (strcmp(name, "TestLogLevel") == 0) {
+        return loguru::Verbosity_INFO;
+    } else if (strcmp(name, "ServerLogLevel") == 0) {
+        return loguru::g_stderr_verbosity;
+    }
+    return loguru::Verbosity_INVALID;
 }
 
 Status Server::TestsGenServiceImpl::provideLoggingCallbacks(
@@ -385,6 +394,7 @@ Status Server::TestsGenServiceImpl::provideLoggingCallbacks(
         fs::path allLogPath = logFilePath / "everything.log";
         fs::path latestLogPath = logFilePath / "latest_readable.log";
         auto callbackName = callbackPrefix + client;
+        loguru::set_name_to_verbosity_callback(&::MaxNameToVerbosityCallback);
         loguru::add_callback(callbackName.c_str(), handler, &data,
                              loguru::get_verbosity_from_name(logLevel.c_str()));
         if (openFiles) {
@@ -437,7 +447,7 @@ Status Server::TestsGenServiceImpl::OpenGTestChannel(ServerContext *context,
                                                      ServerWriter<LogEntry> *writer) {
     ServerUtils::setThreadOptions(context, testMode);
     return provideLoggingCallbacks(gtestLogPrefix, writer, request->loglevel(), gtestLog,
-                                   openedGTestChannel, true);
+                                   openedGTestChannel, false);
 }
 
 Status Server::TestsGenServiceImpl::CloseGTestChannel(ServerContext *context,

@@ -260,7 +260,7 @@ private:
     };
 
     //recommended size from loguru
-    const static size_t buffer_size = 17;
+    const static size_t LOGURU_BUFFER_SIZE = 17;
 
     static void logToClient(void *channel, const loguru::Message &message);
 
