@@ -59,12 +59,15 @@ class OutputWindowProvider(val project: Project): Disposable {
     data class OutputChannel(val uiComponent: Component, val output: UTBotConsole)
 
     init {
+        println("Init block of OutputWindowProvider")
         val outputChannels = OutputType.values().map { type -> type to createOutputChannel(type, project) }
         outputUI = outputChannels.associate { it.first to it.second.uiComponent }.toMutableMap()
         outputs = outputChannels.associate { it.first to it.second.output }.toMutableMap()
+        println("Init block of OutputWindowProvider has finished!")
     }
 
     private fun createServerLogOutputWindow(project: Project): OutputChannel {
+        println("create server log output")
         val toolWindowPanel = SimpleToolWindowPanel(true, true)
         val console = UTBotConsole(project)
         Disposer.register(this, console)
@@ -102,6 +105,7 @@ class OutputWindowProvider(val project: Project): Disposable {
             }, BorderLayout.WEST)
         }
 
+        println("created server log output")
         return OutputChannel(toolWindowPanel, console)
     }
 

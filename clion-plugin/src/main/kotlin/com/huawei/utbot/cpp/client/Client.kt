@@ -66,6 +66,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
     private val grpcStub: TestsGenServiceGrpcKt.TestsGenServiceCoroutineStub = setupGrpcStub()
 
     init {
+        println("Client constructor was called!")
         Logger.info { "Connecting to server on host: ${settings.serverName} , port: ${settings.port}" }
         subscribeToEvents()
         startPeriodicHeartBeat()
