@@ -2,7 +2,6 @@ package com.huawei.utbot.cpp.ui
 
 import com.huawei.utbot.cpp.messaging.ConnectionStatus
 import com.huawei.utbot.cpp.messaging.UTBotEventsListener
-import com.huawei.utbot.cpp.client.Client
 import com.huawei.utbot.cpp.client.LogLevel
 import com.intellij.execution.impl.ConsoleViewImpl
 import com.intellij.execution.ui.ConsoleViewContentType
@@ -24,7 +23,6 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.GridLayout
 import java.awt.Insets
-import java.awt.event.ItemEvent
 
 class ConsoleToolWindowProvider : ToolWindowFactory {
     private val logger = Logger.getInstance(this::class.java)
