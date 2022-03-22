@@ -88,6 +88,7 @@ class OutputWindowProvider(val project: Project): Disposable {
                                 }
                             })
 
+                        /*
                         addItemListener { itemEvent ->
                             if (itemEvent.stateChange == ItemEvent.SELECTED) {
                                 project.service<Client>().setLoggingLevel(
@@ -95,6 +96,7 @@ class OutputWindowProvider(val project: Project): Disposable {
                                 )
                             }
                         }
+                         */
                     },
                 )
             }, BorderLayout.WEST)

@@ -18,6 +18,7 @@ class UTBotStartupActivity: StartupActivity {
     }
 
     private fun setupDependencies(project: Project) {
+        println("setupDependencies in UTBotStartupActivity is called")
         val clientDependencies = module {
             single { project.service<OutputWindowProvider>().outputs[OutputType.CLIENT_LOG]!! }
             single { if (isTestMode) Dispatchers.Default else Dispatchers.Swing }
@@ -25,6 +26,7 @@ class UTBotStartupActivity: StartupActivity {
         startKoin {
             modules(clientDependencies)
         }
+        println("setupDependencies have finished!")
     }
 
     companion object {
