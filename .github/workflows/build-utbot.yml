@@ -63,7 +63,6 @@ jobs:
           cache: gradle
       - name: Run CLion Plugin Tests
         run: |
-          yum install fontconfig
           ./server/build/utbot server > /dev/null 2>&1 &
           cd clion-plugin
           ./gradlew test --info --rerun-tasks
