@@ -64,8 +64,7 @@ jobs:
       - name: Run CLion Plugin Tests
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y yum
-          yum install fontconfig
+          apt-get install libfreetype6 fontconfig fonts-dejavu
           ./server/build/utbot server > /dev/null 2>&1 &
           cd clion-plugin
           ./gradlew test --info --rerun-tasks
