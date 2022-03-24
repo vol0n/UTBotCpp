@@ -149,6 +149,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
                 Logger.error(exception.message)
             }
             .collect {
+                println(it.message)
                 serverConsole.info(it.message)
             }
     }
