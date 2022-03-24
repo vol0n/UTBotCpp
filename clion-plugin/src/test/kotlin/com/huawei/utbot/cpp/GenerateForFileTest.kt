@@ -13,6 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -102,6 +103,14 @@ class GenerateForFileTest : UsefulTestCase() {
             .inheritIO()
             .start()
             .waitFor()
+
+        println("PRINTING DIRS CONTENTS")
+        Files.list(testProjectPath).forEach {
+            println(it.toString())
+        }
+        Files.list(testProjectBuildDir).forEach {
+            println(it.toString())
+        }
     }
 
     fun testGenerateForFile() {
