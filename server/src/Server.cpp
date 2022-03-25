@@ -4,6 +4,7 @@
 
 #include "Server.h"
 
+#include "BordersFinder.h"
 #include "FeaturesFilter.h"
 #include "GTestLogger.h"
 #include "KleeRunner.h"
@@ -35,6 +36,7 @@
 #include "utils/TypeUtils.h"
 
 #include <thread>
+#include <fstream>
 
 using TypeUtils::isSameType;
 
@@ -336,10 +338,10 @@ void Server::logToClient(void *channel, const loguru::Message &message) {
     if (data == nullptr) {
         throw BaseException("Couldn't handle logging to client, data is null");
     }
-    vector <char> thread_name(data->client.size());
-    loguru::get_thread_name(thread_name.data(), sizeof(data->client.size()), false);
+    vector <char> thread_name(LOGURU_BUFFER_SIZE);
+    loguru::get_thread_name(thread_name.data(), LOGURU_BUFFER_SIZE, false);
 
-    if (std::string(thread_name.begin(), thread_name.end()) == data->client &&
+    if (std::string(thread_name.data()) == data->client &&
         std::string(message.filename) != std::string(GTestLogger::fileName())) {
         LogEntry logEntry;
         std::string extractedMessage = extractMessage(message);
@@ -354,16 +356,25 @@ void Server::gtestLog(void *channel, const loguru::Message &message) {
     if (data == nullptr) {
         throw BaseException("Can't interpret gtest log channel");
     }
-    vector <char> thread_name(data->client.size());
-    loguru::get_thread_name(thread_name.data(), sizeof(data->client.size()), false);
+    vector <char> thread_name(LOGURU_BUFFER_SIZE);
+    loguru::get_thread_name(thread_name.data(), LOGURU_BUFFER_SIZE, false);
 
-    if (std::string(thread_name.begin(), thread_name.end()) == data->client &&
+    if (std::string(thread_name.data()) == data->client &&
         std::string(message.filename) == std::string(GTestLogger::fileName())) {
         LogEntry logEntry;
         logEntry.set_message(message.message);
         std::lock_guard<std::mutex> guard(data->writerMutex);
         data->writer->Write(logEntry);
     }
+}
+
+loguru::Verbosity MaxNameToVerbosityCallback(const char* name) {
+    if (strcmp(name, "TestLogLevel") == 0) {
+        return loguru::Verbosity_INFO;
+    } else if (strcmp(name, "ServerLogLevel") == 0) {
+        return loguru::g_stderr_verbosity;
+    }
+    return loguru::Verbosity_INVALID;
 }
 
 Status Server::TestsGenServiceImpl::provideLoggingCallbacks(
@@ -385,6 +396,7 @@ Status Server::TestsGenServiceImpl::provideLoggingCallbacks(
         fs::path allLogPath = logFilePath / "everything.log";
         fs::path latestLogPath = logFilePath / "latest_readable.log";
         auto callbackName = callbackPrefix + client;
+        loguru::set_name_to_verbosity_callback(&::MaxNameToVerbosityCallback);
         loguru::add_callback(callbackName.c_str(), handler, &data,
                              loguru::get_verbosity_from_name(logLevel.c_str()));
         if (openFiles) {
@@ -610,10 +622,17 @@ Server::TestsGenServiceImpl::ConfigureProject(ServerContext *context,
         return UserProjectConfiguration::RunProjectConfigurationCommands(
                 buildDirPath, projectContext.projectname(), cmakeOptions, writer);
     }
+    case ConfigMode::ALL: {
+        std::vector<string> cmakeOptions(request->cmakeoptions().begin(), request->cmakeoptions().end());
+        return UserProjectConfiguration::RunProjectReConfigurationCommands(
+                buildDirPath, fs::path(projectContext.projectpath()),
+                projectContext.projectname(), cmakeOptions, writer);
+    }
     default:
-        return Status(StatusCode::CANCELLED, "Invalid request type.");
+        return {StatusCode::CANCELLED, "Invalid request type."};
     }
 }
+
 Status Server::TestsGenServiceImpl::GetProjectTargets(ServerContext *context,
                                                       const ProjectTargetsRequest *request,
                                                       ProjectTargetsResponse *response) {

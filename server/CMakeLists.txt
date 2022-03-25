@@ -120,6 +120,15 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}")
 
 find_package(run_klee REQUIRED)
 
+option(ENABLE_PRECOMPILED_HEADERS "Enable precompiled headers" ON)
+
+if (ENABLE_PRECOMPILED_HEADERS)
+    set_source_files_properties(${ALL_PROTO_GENERATED_SOURCES} PROPERTIES SKIP_PRECOMPILE_HEADERS ON)
+endif ()
+
+################################################################################
+# Library
+################################################################################
 add_library(UnitTestBotLib STATIC ${ALL_PROTO_GENERATED_SOURCES} ${ALL_SOURCES})
 target_include_directories(UnitTestBotLib PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/src
@@ -133,33 +142,58 @@ target_link_libraries(UnitTestBotLib PUBLIC clangTooling clangBasic clangASTMatc
         loguru
         kleeRunner
         )
+if (ENABLE_PRECOMPILED_HEADERS)
+    target_precompile_headers(UnitTestBotLib PUBLIC pch.h)
+endif ()
+
+################################################################################
+# Executable
+################################################################################
 add_llvm_executable(utbot main.cpp)
 target_link_libraries(utbot PUBLIC
         UnitTestBotLib
         loguru
         )
 
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-add_subdirectory($ENV{UTBOT_ALL}/gtest
-        ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
-        EXCLUDE_FROM_ALL)
-file(GLOB ALL_TESTS "${PROJECT_SOURCE_DIR}/test/framework/*.cpp")
+################################################################################
+# Testing
+################################################################################
+option(ENABLE_UNIT_TESTS "Enable unit tests" ON)
 
-add_executable(
-        UTBot_UnitTests
-        ${ALL_TESTS}
-)
+if (ENABLE_UNIT_TESTS)
+    message(STATUS "Unit tests enabled")
 
-target_include_directories(UTBot_UnitTests PUBLIC src src/include $ENV{UTBOT_ALL}/gtest/googletest)
-target_link_libraries(
-        UTBot_UnitTests
-        PUBLIC
-        gtest_main
-        UnitTestBotLib
-)
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    add_subdirectory($ENV{UTBOT_ALL}/gtest
+            ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+            EXCLUDE_FROM_ALL)
+    file(GLOB ALL_TESTS "${PROJECT_SOURCE_DIR}/test/framework/*.cpp")
 
-add_test(NAME test COMMAND UTBot_UnitTests)
+    add_executable(
+            UTBot_UnitTests
+            ${ALL_TESTS}
+    )
 
+    target_include_directories(UTBot_UnitTests PUBLIC src src/include $ENV{UTBOT_ALL}/gtest/googletest)
+    target_link_libraries(
+            UTBot_UnitTests
+            PUBLIC
+            gtest_main
+            UnitTestBotLib
+    )
+
+    if (ENABLE_PRECOMPILED_HEADERS)
+        target_precompile_headers(UTBot_UnitTests PRIVATE [["gtest/gtest.h"]])
+    endif ()
+
+    add_test(NAME test COMMAND UTBot_UnitTests)
+else ()
+    message(STATUS "Unit tests disabled")
+endif ()
+
+################################################################################
+# Miscellaneous install
+################################################################################
 install(TARGETS utbot
         DESTINATION ${CMAKE_INSTALL_PREFIX}
         )

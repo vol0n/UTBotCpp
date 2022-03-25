@@ -7,6 +7,8 @@
 #include "ProjectContext.h"
 #include "utils/StringUtils.h"
 
+#include "loguru.h"
+
 #include <pwd.h>
 #include <unistd.h>
 
@@ -44,23 +46,20 @@ namespace Paths {
         }
         return pathSet;
     }
+
     bool isSubPathOf(const fs::path &base, const fs::path &sub) {
-        auto b = normalizedTrimmed(base);
-        auto s = normalizedTrimmed(sub).parent_path();
-        auto m = std::mismatch(b.begin(), b.end(),
-                               s.begin(), s.end());
-        return m.first == b.end();
+        auto s = sub.parent_path();
+        auto m = std::mismatch(base.begin(), base.end(), s.begin(), s.end());
+        return m.first == base.end();
     }
 
     fs::path longestCommonPrefixPath(const fs::path &a, const fs::path &b) {
-        fs::path normalizedA = normalizedTrimmed(a);
-        fs::path normalizedB = normalizedTrimmed(b);
-        if (normalizedA == normalizedB) {
-            return normalizedA;
+        if (a == b) {
+            return a;
         }
-        auto const &[mismatchA, mismatchB] = std::mismatch(normalizedA.begin(), normalizedA.end(),
-                                                           normalizedB.begin(), normalizedB.end());
-        fs::path result = std::accumulate(normalizedA.begin(), mismatchA, fs::path{},
+        auto const &[mismatchA, mismatchB] = std::mismatch(a.begin(), a.end(), b.begin(), b.end());
+        fs::path result =
+            std::accumulate(a.begin(), mismatchA, fs::path{},
                             [](fs::path const &a, fs::path const &b) { return a / b; });
         return result;
     }
@@ -158,6 +157,25 @@ namespace Paths {
         };
         return std::any_of(internalErrorSuffixes.begin(), internalErrorSuffixes.end(),
                            [&path](auto const &suffix) { return errorFileExists(path, suffix); });
+    }
+
+    //endregion
+
+    //region extensions
+
+    utbot::Language getSourceLanguage(const fs::path &path) {
+        if(isHFile(path)) {
+            LOG_S(WARNING) << "C language detected by .h file: " << path.string();
+            return utbot::Language::C;
+        }
+        if(isCFile(path)) {
+            return utbot::Language::C;
+        }
+        if(isCXXFile(path) || isHppFile(path)) {
+            return utbot::Language::CXX;
+        }
+        LOG_S(WARNING) << "Unknown source language of " << path.string();
+        return utbot::Language::UNKNOWN;
     }
 
     //endregion
@@ -358,5 +376,4 @@ namespace Paths {
     const std::vector<std::string> HPPFileExtensions({".hh", ".hpp", ".hxx"});
     const std::vector<std::string> CFileSourceExtensions({".c"});
     const std::vector<std::string> CFileHeaderExtensions({".h"});
-
 }
