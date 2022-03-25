@@ -63,5 +63,5 @@ jobs:
           cache: gradle
       - name: Run CLion Plugin Tests
         run: |
-          chmod +x runClionTests.sh 
-          ./runClionTests.sh
+          chmod +x runPluginTests.sh 
+          ./runPluginTests.sh
