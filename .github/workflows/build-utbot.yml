@@ -65,3 +65,11 @@ jobs:
         run: |
           chmod +x runPluginTests.sh 
           ./runPluginTests.sh
+      - name: Upload logs
+        uses: actions/upload-artifact@v2
+        if: ${{ always() }}
+        with:
+          name: test-report
+          path: |
+            server-log.txt
+            clion-plugin/build/reports/tests/**/*
