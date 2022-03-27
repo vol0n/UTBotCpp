@@ -71,5 +71,6 @@ jobs:
         with:
           name: test-report
           path: |
+            /github/home/logs
             server-log.txt
             clion-plugin/build/reports/tests/**/*
