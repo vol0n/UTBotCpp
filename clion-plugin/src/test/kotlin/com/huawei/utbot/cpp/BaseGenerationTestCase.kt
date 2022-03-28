@@ -4,6 +4,7 @@ import com.huawei.utbot.cpp.client.Client
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.huawei.utbot.cpp.services.UTBotStartupActivity
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.testFramework.UsefulTestCase
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
@@ -12,12 +13,11 @@ import com.intellij.util.io.delete
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
-import org.junit.Ignore
+import org.koin.core.context.stopKoin
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
-@Ignore
 abstract class BaseGenerationTestCase : UsefulTestCase() {
     /**
      * Implementation of TempDirTestFixture that uses [testsDirectory] as
@@ -38,7 +38,10 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
         // as the directory is not actually temporary, it should not be deleted
         override fun deleteOnTearDown() = false
     }
+
     init {
+        println("THE CONSTRUCTOR OF BASEGENERATIONTESTCASE WAS CALLED!")
+        stopKoin()
         UTBotStartupActivity.isTestMode = true
     }
 
@@ -47,8 +50,11 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
     val testProjectName = Paths.get(relativeProjectPath).last().toString()
     val testProjectTestDir = testProjectPath.resolve("cl-plugin-test-tests")
     val testProjectBuildDir = testProjectPath.resolve("cl-plugin-test-buildDir")
-    val myFixture = createFixture()
-    val project = myFixture.project
+
+    val myFixture: CodeInsightTestFixture = createFixture()
+    val project: Project = myFixture.project
+    val settings: UTBotSettings = project.service()
+    val client: Client = project.service()
 
     private fun createFixture(): CodeInsightTestFixture {
         println("Creating fixture")
@@ -61,9 +67,6 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
         return fixture
     }
 
-    private val settings: UTBotSettings = project.service()
-    private val client: Client = project.service()
-
     // called before each test
     override fun setUp() {
         println("setUP of my UsefulTestcase")
@@ -71,7 +74,6 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
         super.setUp()
         settings.buildDirPath = testProjectBuildDir.toString()
         settings.testDirPath = testProjectTestDir.toString()
-        buildProject(buildDirName = testProjectBuildDir.last().toString())
         println("setUp of my UsefulTestCase has finished!")
     }
 
@@ -84,8 +86,9 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
         println("Finished waiting!")
     }
 
-    private fun buildProject(compiler: Compiler = Compiler.Gcc, buildDirName: String) {
+    protected fun buildProject(compiler: Compiler, buildDirName: String) {
         val buildCommand = getBuildCommand(compiler, buildDirName)
+        println("Building the project with compler: $compiler, and build dir name: $buildDirName")
         println("BUILD COMMAND: $buildCommand")
         ProcessBuilder("bash", "-c", buildCommand)
             .directory(testProjectPath.toFile())
@@ -96,16 +99,13 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
         checkFileExists(testProjectBuildDir, "Build folder does not exist, after generation")
     }
 
-    override fun shouldRunTest(): Boolean {
-        return super.shouldRunTest()
-    }
-
     // called after each test
     override fun tearDown() {
         println("tearDown of myUsefulTestCase is called")
         // somehow project service Client is not disposed automatically by the ide, and the exception is thrown that
         // timer related to heartbeat is not disposed. So let's dispose it manually.
         client.dispose()
+        stopKoin()
         testProjectBuildDir.delete(recursively = true)
         testProjectTestDir.delete(recursively = true)
         super.tearDown()
