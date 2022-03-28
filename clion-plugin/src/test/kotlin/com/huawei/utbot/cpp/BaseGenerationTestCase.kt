@@ -6,8 +6,10 @@ import com.huawei.utbot.cpp.services.UTBotStartupActivity
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.UsefulTestCase
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
+import com.intellij.testFramework.fixtures.TempDirTestFixture
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
 import com.intellij.util.io.delete
 import kotlinx.coroutines.delay
@@ -52,9 +54,15 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
     val testProjectBuildDir = testProjectPath.resolve("cl-plugin-test-buildDir")
 
     val myFixture: CodeInsightTestFixture = createFixture()
-    val project: Project = myFixture.project
+    val project = myFixture.project
     val settings: UTBotSettings = project.service()
     val client: Client = project.service()
+
+    /*
+    override fun createTempDirTestFixture(): TempDirTestFixture {
+        return TestFixtureProxy(testProjectPath)
+    }
+     */
 
     private fun createFixture(): CodeInsightTestFixture {
         println("Creating fixture")
