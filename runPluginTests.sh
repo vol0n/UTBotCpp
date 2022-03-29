@@ -2,6 +2,9 @@
 sudo apt-get update -y
 apt-get install libfreetype6 fontconfig fonts-dejavu -y
 
+# enable needed envs for server 
+source docker/building_dependencies/runtime_env.sh
+
 # look at include paths
 cpp -v /dev/null /dev/null
 
