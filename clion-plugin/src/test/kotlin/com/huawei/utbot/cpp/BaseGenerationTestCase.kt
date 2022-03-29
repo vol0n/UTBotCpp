@@ -4,12 +4,9 @@ import com.huawei.utbot.cpp.client.Client
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.huawei.utbot.cpp.services.UTBotStartupActivity
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.testFramework.UsefulTestCase
-import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
-import com.intellij.testFramework.fixtures.TempDirTestFixture
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
 import com.intellij.util.io.delete
 import kotlinx.coroutines.delay
@@ -51,7 +48,7 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
     val testProjectPath = Paths.get(File(".").canonicalPath).resolve(relativeProjectPath).normalize()
     val testProjectName = Paths.get(relativeProjectPath).last().toString()
     val testProjectTestDir = testProjectPath.resolve("cl-plugin-test-tests")
-    val testProjectBuildDir = testProjectPath.resolve("cl-plugin-test-buildDir")
+    val testProjectBuildDir = testProjectPath.resolve("build")
 
     val myFixture: CodeInsightTestFixture = createFixture()
     val project = myFixture.project
@@ -96,7 +93,7 @@ abstract class BaseGenerationTestCase : UsefulTestCase() {
 
     protected fun buildProject(compiler: Compiler, buildDirName: String) {
         val buildCommand = getBuildCommand(compiler, buildDirName)
-        println("Building the project with compler: $compiler, and build dir name: $buildDirName")
+        println("Building the project with compiler: $compiler, and build dir name: $buildDirName")
         println("BUILD COMMAND: $buildCommand")
         ProcessBuilder("bash", "-c", buildCommand)
             .directory(testProjectPath.toFile())
