@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 sudo apt-get update -y
 apt-get install libfreetype6 fontconfig fonts-dejavu -y
 
