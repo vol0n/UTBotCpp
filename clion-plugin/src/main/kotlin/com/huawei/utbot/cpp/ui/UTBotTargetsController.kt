@@ -61,11 +61,9 @@ class UTBotTargetsController(val project: Project) {
         return UTBotTargetsToolWindow(listModel, this)
     }
 
-    fun selectionChanged(index: Int) {
+    fun selectionChanged(selectedTarget: UTBotTarget) {
         // when user selects target update model
-        if (index in 0 until listModel.size) {
-            utbotSettings.targetPath = listModel.getElementAt(index).path
-        }
+        utbotSettings.targetPath = selectedTarget.path
     }
 
     private fun connectToEvents() {

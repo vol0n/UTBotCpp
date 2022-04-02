@@ -10,6 +10,7 @@ import com.intellij.ui.components.JBScrollPane
 
 import javax.swing.JList
 import com.huawei.utbot.cpp.models.UTBotTarget
+import javax.swing.ListSelectionModel
 
 
 class UTBotTargetsToolWindow(
@@ -21,9 +22,9 @@ class UTBotTargetsToolWindow(
     init {
         val panel = JBScrollPane()
         uiList.cellRenderer = Renderer()
+        uiList.selectionMode = ListSelectionModel.SINGLE_SELECTION
         uiList.addListSelectionListener {
-            controller.selectionChanged(uiList.selectedIndex)
-            uiList.updateUI()
+            controller.selectionChanged(uiList.selectedValue)
         }
         panel.setViewportView(uiList)
         setContent(panel)
