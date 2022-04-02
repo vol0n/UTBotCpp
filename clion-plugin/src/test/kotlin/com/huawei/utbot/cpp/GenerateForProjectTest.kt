@@ -1,10 +1,11 @@
 package com.huawei.utbot.cpp
 
 import com.huawei.utbot.cpp.actions.GenerateForProjectAction
+import org.junit.jupiter.api.Test
 
 class GenerateForProjectTest: BaseGenerationTestCase() {
+    @Test
     fun testGenerateForProject() {
-        return
         buildProject(Compiler.Clang, buildDirName)
         fixture.testAction(GenerateForProjectAction())
         waitForRequestsToFinish()

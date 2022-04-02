@@ -1,6 +1,7 @@
 package com.huawei.utbot.cpp.client
 
 import io.grpc.ManagedChannelBuilder
+import org.tinylog.kotlin.Logger
 import testsgen.TestsGenServiceGrpcKt
 
 import java.io.Closeable
@@ -12,6 +13,7 @@ class GrpcClient(port: Int, serverName: String) : Closeable {
         TestsGenServiceGrpcKt.TestsGenServiceCoroutineStub(channel)
 
     override fun close() {
+        Logger.trace("Closing grpc channel!")
         channel.shutdown().awaitTermination(5, TimeUnit.SECONDS)
     }
 }

@@ -3,12 +3,12 @@ package com.huawei.utbot.cpp.actions
 import com.huawei.utbot.cpp.actions.utils.getCoverageAndResultsRequest
 import com.huawei.utbot.cpp.utils.client
 import com.huawei.utbot.cpp.models.TestNameAndTestSuite
-import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.PsiElement
 
-class RunWithCoverageAction(val element: PsiElement) : AnAction() {
+
+class RunWithCoverageAction(val element: PsiElement) : GenerateTestsBaseAction() {
     override fun actionPerformed(e: AnActionEvent) {
         log.debug("Action RunWithCoverageAction was called")
         if (element.containingFile == null)
@@ -20,6 +20,8 @@ class RunWithCoverageAction(val element: PsiElement) : AnAction() {
         val request = getCoverageAndResultsRequest(e, suiteName, testedMethodName)
         e.client.getCoverageAndResults(request)
     }
+
+    override fun updateIfServerAvailable(e: AnActionEvent) {}
 
     companion object {
         private val log = Logger.getInstance(this::class.java)

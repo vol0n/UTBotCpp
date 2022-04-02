@@ -1,6 +1,9 @@
 package com.huawei.utbot.cpp
 
+import org.junit.jupiter.api.Test
+
 class GenerateForIsolatedFileTest : BaseGenerationTestCase() {
+    @Test
     fun testGenerateForFile() {
         buildProject(compiler = Compiler.Clang, buildDirName = "build")
         fixture.configureFromTempProjectFile("/lib/basic_functions.c")

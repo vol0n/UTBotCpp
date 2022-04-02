@@ -18,7 +18,6 @@ import com.intellij.coverage.CoverageEngine
 import com.intellij.coverage.CoverageRunner
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.Job
@@ -27,13 +26,15 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import testsgen.Testgen
 import testsgen.Util
+import java.util.*
 
 /**
  * Handles test responses, and also project configuration responses.
  */
 class ResponseHandler(val project: Project, val client: Client) {
     private val utbotSettings: UTBotSettings = project.service()
-    private val logger = Logger.getInstance(this::class.java)
+    private val logger = com.intellij.openapi.diagnostic.Logger.getInstance(this::class.java)
+    private val clientLogger = org.tinylog.kotlin.Logger
 
     private fun handleTestsResponse(response: Testgen.TestsResponse, uiProgress: UTBotRequestProgressIndicator) {
         if (response.hasProgress()) {
@@ -45,7 +46,10 @@ class ResponseHandler(val project: Project, val client: Client) {
         }
     }
 
-    suspend fun handleCoverageAndResultsResponse(grpcStream: Flow<Testgen.CoverageAndResultsResponse>, uiProgressName: String) {
+    suspend fun handleCoverageAndResultsResponse(
+        grpcStream: Flow<Testgen.CoverageAndResultsResponse>,
+        uiProgressName: String
+    ) {
         fun dataHandler(response: Testgen.CoverageAndResultsResponse, uiProgress: UTBotRequestProgressIndicator) {
             if (response.hasProgress()) {
                 ApplicationManager.getApplication().invokeLater {
@@ -53,6 +57,7 @@ class ResponseHandler(val project: Project, val client: Client) {
                 }
             }
         }
+
         val lastResponse = handleWithUIProgress(grpcStream, uiProgressName, ::dataHandler)
         lastResponse ?: error("Last response is Null")
         if (lastResponse.errorMessage.isNotEmpty()) {
@@ -60,7 +65,8 @@ class ResponseHandler(val project: Project, val client: Client) {
         }
 
         // when we received results, test statuses should be updated in the gutter
-        project.messageBus.syncPublisher(UTBotTestResultsReceivedListener.TOPIC).testResultsReceived(lastResponse.testRunResultsList)
+        project.messageBus.syncPublisher(UTBotTestResultsReceivedListener.TOPIC)
+            .testResultsReceived(lastResponse.testRunResultsList)
 
         logger.debug("LAUNCHING PROCESSING OF COVERAGE")
 
@@ -73,10 +79,12 @@ class ResponseHandler(val project: Project, val client: Client) {
         lastResponse.testRunResultsList.forEach {
             logger.info("${it.testFilePath}: name: ${it.testname}, status: ${it.status}")
         }
-        val engine = CoverageEngine.EP_NAME.findExtension(UTBotCoverageEngine::class.java) ?: error("UTBotEngine instance is not found!")
+        val engine = CoverageEngine.EP_NAME.findExtension(UTBotCoverageEngine::class.java)
+            ?: error("UTBotEngine instance is not found!")
         val coverageRunner = CoverageRunner.getInstance(UTBotCoverageRunner::class.java)
         val manager = CoverageDataManager.getInstance(project)
-        val suite = UTBotCoverageSuite(engine,
+        val suite = UTBotCoverageSuite(
+            engine,
             lastResponse.coveragesList,
             coverageRunner = coverageRunner,
             name = "UTBot coverage suite",
@@ -89,21 +97,31 @@ class ResponseHandler(val project: Project, val client: Client) {
         if (response.hasProgress()) {
             handleProgress(response.progress, uiProgress)
         }
-        handleSourceCode(response.stubSourcesList)
+        handleSourceCode(response.stubSourcesList, true)
     }
 
-    private fun handleSourceCode(sources: List<Util.SourceCode>) {
+    private fun handleSourceCode(sources: List<Util.SourceCode>, isStubs: Boolean = false) {
         sources.forEach { sourceCode ->
             val filePath: String = utbotSettings.convertFromRemotePathIfNeeded(sourceCode.filePath)
+
             if (sourceCode.code.isNotEmpty()) {
                 createFileAndMakeDirs(
                     filePath,
                     sourceCode.code
                 )
             }
+
+            var infoMessage = "Generated " + if (isStubs) "stub" else "test" + " file"
+            if (isGeneratedFileTestSourceFile(filePath))
+                infoMessage += " with ${sourceCode.regressionMethodsNumber} tests in regression suite" +
+                        " and ${sourceCode.errorMethodsNumber} tests in error suite"
+            clientLogger.info { "$infoMessage: $filePath" }
+
             refreshAndFindIOFile(filePath)
         }
     }
+
+    private fun isGeneratedFileTestSourceFile(fileName: String) = fileName.endsWith("_test.cpp")
 
     private fun handleProgress(
         serverProgress: Util.Progress,
@@ -231,13 +249,17 @@ class ResponseHandler(val project: Project, val client: Client) {
                 logger.warn(exception.message)
                 exception.message?.let { notifyError(it, project) }
             }
-            .collect {
-                lastReceivedData = it
-                dataHandler(it, uiProgress)
+            .collect { data: T ->
+                lastReceivedData = data
+                dataHandler(data, uiProgress)
             }
         ApplicationManager.getApplication().invokeLater {
             uiProgress.complete()
         }
         return lastReceivedData
+    }
+
+    companion object {
+        const val DEFAULT_TIMEOUT = 30000
     }
 }

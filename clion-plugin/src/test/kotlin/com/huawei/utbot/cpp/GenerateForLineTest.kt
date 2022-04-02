@@ -3,11 +3,13 @@ package com.huawei.utbot.cpp
 import com.huawei.utbot.cpp.services.GeneratorSettings
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
+import org.junit.jupiter.api.Test
+import org.tinylog.kotlin.Logger
 
 class GenerateForLineTest: BaseGenerationTestCase() {
 
     fun doTest(lineNumber: Int, targetName: String = "liblib.a", compiler: Compiler = Compiler.Clang, isVerbose: Boolean = true) {
-        println("Testing generate for line using target: $targetName, compiler: $compiler, verbose mode: $isVerbose, line: $lineNumber")
+        Logger.info("Testing generate for line using target: $targetName, compiler: $compiler, verbose mode: $isVerbose, line: $lineNumber")
         buildProject(compiler, buildDirName)
         setTarget(targetName)
         project.service<GeneratorSettings>().verbose = isVerbose
@@ -23,12 +25,19 @@ class GenerateForLineTest: BaseGenerationTestCase() {
         testsDirectoryPath.assertAllFilesNotEmptyRecursively()
     }
 
+    @Test
     fun `test generate for head of max line`() {
         doTest(HEAD_OF_MAX_LINE)
     }
 
+    @Test
     fun `test generate for line if in max function line`() {
         doTest(IF_IN_MAX_FUNCTION_LINE)
+    }
+
+    @Test
+    fun `test generate for line if in max function line with gcc`() {
+        doTest(IF_IN_MAX_FUNCTION_LINE, compiler = Compiler.Gcc)
     }
 
     private fun Editor.moveCursorToLine(lineNumber: Int) {
