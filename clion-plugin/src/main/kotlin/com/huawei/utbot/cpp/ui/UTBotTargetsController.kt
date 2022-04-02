@@ -19,6 +19,9 @@ class UTBotTargetsController(val project: Project) {
     private val listModel = CollectionListModel(mutableListOf<UTBotTarget>(UTBotTarget.autoTarget))
     private val client = project.service<Client>()
 
+    val targets: List<UTBotTarget>
+        get() = listModel.toList()
+
     init {
         requestTargetsFromServer()
         addTargetPathIfNotPresent(utbotSettings.targetPath)

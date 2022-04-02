@@ -1,12 +1,21 @@
 package com.huawei.utbot.cpp
 
 import com.intellij.util.io.exists
+import com.intellij.util.io.readText
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 
 enum class Compiler {
     Clang, Gcc
+}
+
+fun Path.assertFilesExist(vararg fileNames: String) {
+    for (fileName in fileNames) {
+        this.resolve("${fileName}_test.c").assertFileOrDirExists()
+    }
 }
 
 fun getBuildCommand(compiler: Compiler, buildDirName: String): String {
@@ -23,7 +32,18 @@ fun getBuildCommand(compiler: Compiler, buildDirName: String): String {
     }
 }
 
+fun Path.assertAllFilesNotEmptyRecursively() {
+    val visitor = object : SimpleFileVisitor<Path>() {
+        override fun visitFile(file: Path?, attrs: BasicFileAttributes?): FileVisitResult {
+            if (attrs?.isRegularFile == true && file?.readText()?.isEmpty() == true) {
+                throw AssertionError("Found an empty file: $file")
+            }
+            return FileVisitResult.CONTINUE
+        }
+    }
+    Files.walkFileTree(this, visitor)
+}
 
-fun checkFileExists(path: Path, message: String) {
-    assert(path.exists()) { message }
+fun Path.assertFileOrDirExists(message: String = "") {
+    assert(this.exists()) { "$this does not exist!\n${message}" }
 }
