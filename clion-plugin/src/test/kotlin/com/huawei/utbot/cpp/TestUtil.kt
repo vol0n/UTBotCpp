@@ -14,7 +14,7 @@ enum class Compiler {
 
 fun Path.assertFilesExist(vararg fileNames: String) {
     for (fileName in fileNames) {
-        this.resolve("${fileName}_test.c").assertFileOrDirExists()
+        this.resolve("${fileName}_test.cpp").assertFileOrDirExists()
     }
 }
 

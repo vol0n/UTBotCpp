@@ -1,4 +1,4 @@
-package com.huawei.utbot.cpp.client
+package com.huawei.utbot.cpp.client.logger
 
 import com.huawei.utbot.cpp.ui.UTBotConsole
 import com.intellij.execution.ui.ConsoleViewContentType
