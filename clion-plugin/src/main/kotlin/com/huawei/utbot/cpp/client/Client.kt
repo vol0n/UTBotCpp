@@ -75,7 +75,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
     private fun setupGrpcStub(): TestsGenServiceGrpcKt.TestsGenServiceCoroutineStub {
         val metadata: io.grpc.Metadata = io.grpc.Metadata()
         val stub = GrpcClient(settings.port, settings.serverName).stub
-        metadata.put(io.grpc.Metadata.Key.of("clientid", io.grpc.Metadata.ASCII_STRING_MARSHALLER), clientID)
+        metadata.put(io.grpc.Metadata.Key.of("clientId", io.grpc.Metadata.ASCII_STRING_MARSHALLER), clientID)
         return io.grpc.stub.MetadataUtils.attachHeaders(stub, metadata)
     }
 
@@ -85,14 +85,12 @@ class Client(val project: Project) : Disposable, KoinComponent {
                 override fun onConnectionChange(oldStatus: ConnectionStatus, newStatus: ConnectionStatus) {
                     if (oldStatus != newStatus && newStatus == ConnectionStatus.CONNECTED) {
                         Logger.info("Successfully connected to server!")
+                        registerClient(clientID)
                         configureProject()
                     }
                 }
 
                 override fun onHeartbeatSuccess(response: Testgen.HeartbeatResponse) {
-                    RunOnceUtil.runOnceForProject(project, "UTBot: Register client for server") {
-                        registerClient(clientID)
-                    }
 
                     if (newClient || !response.linked) {
                         longLivingRequestsCS.launch {
@@ -114,7 +112,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
     }
 
     private suspend fun provideGTestChannel() {
-        val request = Testgen.LogChannelRequest.newBuilder().setLogLevel("MAX").build()
+        val request = Testgen.LogChannelRequest.newBuilder().setLogLevel("TestLogLevel").build()
         try {
             grpcStub.closeGTestChannel(getDummyRequest())
         } catch (e: Exception) {
@@ -134,7 +132,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
     }
 
     private suspend fun provideLogChannel() {
-        val request = Testgen.LogChannelRequest.newBuilder().setLogLevel(logLevel.id).build()
+        val request = Testgen.LogChannelRequest.newBuilder().setLogLevel("ServerLogLevel").build()
         try {
             grpcStub.closeLogChannel(getDummyRequest())
         } catch (e: Exception) {
