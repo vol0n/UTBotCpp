@@ -23,6 +23,5 @@ fun String.convertToRemotePathIfNeeded(project: Project): String {
 val CoroutineScope.children
     get() = this.coroutineContext.job.children.toList()
 
-val CoroutineScope.hasChildren
-    get() = this.children.isNotEmpty()
+fun CoroutineScope.hasChildren(): Boolean = children.isNotEmpty()
 

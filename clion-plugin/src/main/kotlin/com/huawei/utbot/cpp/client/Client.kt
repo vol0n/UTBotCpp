@@ -15,7 +15,6 @@ import kotlin.random.Random
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.catch
@@ -39,6 +38,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.swing.Swing
+import kotlinx.coroutines.withTimeout
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import org.koin.core.context.startKoin
@@ -53,7 +53,6 @@ class Client(val project: Project) : Disposable, KoinComponent {
     var connectionStatus = ConnectionStatus.INIT
         private set
     private val messageBus = project.messageBus
-    private var heartBeatJob: Job? = null
     private val handler = ResponseHandler(project, this)
     private var newClient = true
     private val settings = project.service<UTBotSettings>()
@@ -216,10 +215,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
 
     private fun startPeriodicHeartBeat() {
         Logger.info("The heartbeat started with interval: $HEARTBEAT_INTERVAL ms")
-        if (heartBeatJob != null) {
-            heartBeatJob?.cancel()
-        }
-        heartBeatJob = longLivingRequestsCS.launch(CoroutineName("periodicHeartBeat")) {
+        longLivingRequestsCS.launch(CoroutineName("periodicHeartBeat")) {
             while (isActive) {
                 heartBeatOnce()
                 delay(HEARTBEAT_INTERVAL)
@@ -409,26 +405,36 @@ class Client(val project: Project) : Disposable, KoinComponent {
     }
 
     override fun dispose() {
-        // when project is closed, cancel all running coroutines
         Logger.trace("Disposing client!")
-        heartBeatJob?.cancel()
-        shortLivingRequestsCS.cancel()
-        longLivingRequestsCS.cancel()
+        // when project is closed, cancel all running coroutines
+        cancelAllRequestsAndWaitForCancellation()
+        // release resources associated with grpc
+        grpcClient.close()
+        Logger.trace("Finished disposing client!")
+    }
 
+    fun waitForServerRequestsToFinish(timeout: Long = SERVER_TIMEOUT) {
         runBlocking {
-            val waitingTime = 500L
-            if (shortLivingRequestsCS.hasChildren || longLivingRequestsCS.hasChildren) {
-                shortLivingRequestsCS.cancel()
-                longLivingRequestsCS.cancel()
-                Logger.trace { "There are unfinished requests:\n${shortLivingRequestsCS.children}\n${longLivingRequestsCS.children}" }
-                Logger.trace("Waiting $waitingTime ms for them to finish!")
-                delay(waitingTime)
+            withTimeout(timeout) {
+                while (shortLivingRequestsCS.hasChildren()) {
+                    delay(DELAY_TIME)
+                }
             }
         }
+    }
 
-        grpcClient.close()
-
-        Logger.trace("Finished disposing client!")
+    private fun cancelAllRequestsAndWaitForCancellation(timeoutMillis: Long = SERVER_TIMEOUT) {
+        runBlocking {
+            withTimeout(timeoutMillis) {
+                while (shortLivingRequestsCS.hasChildren() || longLivingRequestsCS.hasChildren()) {
+                    shortLivingRequestsCS.cancel()
+                    longLivingRequestsCS.cancel()
+                    Logger.trace { "There are unfinished requests:\n${shortLivingRequestsCS.children}\n${longLivingRequestsCS.children}" }
+                    Logger.trace("Waiting $DELAY_TIME ms for them to cancel!")
+                    delay(DELAY_TIME)
+                }
+            }
+        }
     }
 
     companion object {
@@ -436,5 +442,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
         const val RANDOM_SEQUENCE_MAX_VALUE = 10
         const val RANDOM_SEQUENCE_LENGTH = 5
         const val HEARTBEAT_INTERVAL: Long = 500L
+        const val SERVER_TIMEOUT: Long = 300000L
+        const val DELAY_TIME: Long = 500L
     }
 }

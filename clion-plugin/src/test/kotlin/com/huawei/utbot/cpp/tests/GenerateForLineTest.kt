@@ -1,5 +1,11 @@
-package com.huawei.utbot.cpp
+package com.huawei.utbot.cpp.tests
 
+import com.huawei.utbot.cpp.BaseGenerationTestCase
+import com.huawei.utbot.cpp.Clang
+import com.huawei.utbot.cpp.CppCompiler
+import com.huawei.utbot.cpp.Gcc
+import com.huawei.utbot.cpp.assertAllFilesNotEmptyRecursively
+import com.huawei.utbot.cpp.assertFileOrDirExists
 import com.huawei.utbot.cpp.services.GeneratorSettings
 import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
@@ -8,11 +14,11 @@ import org.tinylog.kotlin.Logger
 
 class GenerateForLineTest: BaseGenerationTestCase() {
 
-    fun doTest(lineNumber: Int, targetName: String = "liblib.a", compiler: Compiler = Compiler.Clang, isVerbose: Boolean = true) {
-        Logger.info("Testing generate for line using target: $targetName, compiler: $compiler, verbose mode: $isVerbose, line: $lineNumber")
-        buildProject(compiler, buildDirName)
+    fun doTest(lineNumber: Int, targetName: String = "liblib.a", compiler: CppCompiler = Clang, isVerbose: Boolean = true) {
+        Logger.info("Testing generate for line using target: $targetName, compiler: ${compiler.name}, verbose mode: $isVerbose, line: $lineNumber")
+        compiler.buildProject(projectPath, buildDirName)
         setTarget(targetName)
-        project.service<GeneratorSettings>().verbose = isVerbose
+        generatorSettings.verbose = isVerbose
 
         fixture.configureFromTempProjectFile("/lib/basic_functions.c")
         fixture.editor.moveCursorToLine(lineNumber)
@@ -37,7 +43,7 @@ class GenerateForLineTest: BaseGenerationTestCase() {
 
     @Test
     fun `test generate for line if in max function line with gcc`() {
-        doTest(IF_IN_MAX_FUNCTION_LINE, compiler = Compiler.Gcc)
+        doTest(IF_IN_MAX_FUNCTION_LINE, compiler = Gcc)
     }
 
     private fun Editor.moveCursorToLine(lineNumber: Int) {

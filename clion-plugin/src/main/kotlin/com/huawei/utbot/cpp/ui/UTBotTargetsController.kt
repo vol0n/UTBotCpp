@@ -12,6 +12,7 @@ import com.intellij.ui.CollectionListModel
 import com.huawei.utbot.cpp.messaging.ConnectionStatus
 import com.huawei.utbot.cpp.messaging.UTBotEventsListener
 import com.huawei.utbot.cpp.models.UTBotTarget
+import org.tinylog.kotlin.Logger
 
 
 class UTBotTargetsController(val project: Project) {
@@ -28,18 +29,21 @@ class UTBotTargetsController(val project: Project) {
         connectToEvents()
     }
 
-    private fun requestTargetsFromServer() {
-        if (client.isServerAvailable()) {
-            client.requestProjectTargetsAndProcess(getProjectTargetsRequest(project)) { targetsResponse ->
-                ApplicationManager.getApplication().invokeLater {
-                    listModel.apply {
-                        val oldTargetList = toList()
-                        oldTargetList.addAll(
-                            targetsResponse.targetsList.map { projectTarget ->
-                                UTBotTarget(projectTarget, project)
-                            })
-                        listModel.replaceAll(oldTargetList.distinct())
-                    }
+    fun requestTargetsFromServer() {
+        if (!client.isServerAvailable()) {
+            Logger.error("Could not request targets from server: server is unavailable!")
+            return
+        }
+        Logger.trace("Requesting project targets from server!")
+        client.requestProjectTargetsAndProcess(getProjectTargetsRequest(project)) { targetsResponse ->
+            ApplicationManager.getApplication().invokeLater {
+                listModel.apply {
+                    val oldTargetList = toList()
+                    oldTargetList.addAll(
+                        targetsResponse.targetsList.map { projectTarget ->
+                            UTBotTarget(projectTarget, project)
+                        })
+                    listModel.replaceAll(oldTargetList.distinct())
                 }
             }
         }
@@ -64,6 +68,11 @@ class UTBotTargetsController(val project: Project) {
     fun selectionChanged(selectedTarget: UTBotTarget) {
         // when user selects target update model
         utbotSettings.targetPath = selectedTarget.path
+    }
+
+    fun setTargetByName(targetName: String) {
+        val target = targets.find { it.name == targetName } ?: error("No such target!")
+        utbotSettings.targetPath = target.path
     }
 
     private fun connectToEvents() {

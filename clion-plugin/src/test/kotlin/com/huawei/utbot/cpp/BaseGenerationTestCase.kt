@@ -2,6 +2,7 @@ package com.huawei.utbot.cpp
 
 import com.huawei.utbot.cpp.client.Client
 import com.huawei.utbot.cpp.models.UTBotTarget
+import com.huawei.utbot.cpp.services.GeneratorSettings
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.huawei.utbot.cpp.ui.UTBotTargetsController
 import com.intellij.openapi.components.service
@@ -10,8 +11,8 @@ import com.intellij.testFramework.PlatformTestUtil
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
-import com.intellij.testFramework.runInEdtAndWait
 import com.intellij.util.io.delete
+import kotlin.io.path.name
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
@@ -53,22 +54,21 @@ abstract class BaseGenerationTestCase {
         Client.IS_TEST_MODE = true
     }
 
-    val projectPath: Path = Paths.get(File(".").canonicalPath).resolve("../integration-tests/c-example").normalize()
+    val projectPath: Path = Paths.get(File(".").canonicalPath).resolve("../integration-tests/c-example-mini").normalize()
     val testsDirectoryPath: Path = projectPath.resolve("cl-plugin-test-tests")
-    val buildDirectoryPath: Path = projectPath.resolve("build")
-
+    val buildDirName = "build"
+    val buildDirectoryPath: Path
+        get() = projectPath.resolve(buildDirName)
     val fixture: CodeInsightTestFixture = createFixture()
-
-    val projectName: String
-        get() = projectPath.last().toString()
-    val buildDirName: String
-        get() = buildDirectoryPath.last().toString()
     val project: Project
         get() = fixture.project
     val settings: UTBotSettings
         get() = project.service()
+    val generatorSettings: GeneratorSettings
+        get() = project.service()
     val client: Client
         get() = project.service()
+    val targetsController = UTBotTargetsController(project)
 
     init {
         settings.buildDirPath = buildDirectoryPath.toString()
@@ -78,7 +78,7 @@ abstract class BaseGenerationTestCase {
     private fun createFixture(): CodeInsightTestFixture {
         Logger.trace("Creating fixture")
         val fixture = IdeaTestFixtureFactory.getFixtureFactory().let {
-            it.createCodeInsightFixture(it.createFixtureBuilder(projectName, projectPath, false).fixture, TestFixtureProxy(projectPath))
+            it.createCodeInsightFixture(it.createFixtureBuilder(projectPath.name, projectPath, false).fixture, TestFixtureProxy(projectPath))
         }
         fixture.setUp()
         fixture.testDataPath = projectPath.toString()
@@ -87,35 +87,21 @@ abstract class BaseGenerationTestCase {
     }
 
     fun setTarget(targetName: String) {
-        val utbotTarget: UTBotTarget = UTBotTargetsController(project).let { controller ->
-            waitForRequestsToFinish()
-            PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
-            controller.targets.find { target -> target.name == targetName } ?: error("No such target: $targetName.\n${controller.targets.map { it.name }}")
-        }
-        settings.targetPath = utbotTarget.path
+        assert(client.isServerAvailable()) { "Not connected to server!" }
+        targetsController.requestTargetsFromServer()
+        waitForRequestsToFinish()
+        PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
+        targetsController.setTargetByName(targetName)
     }
 
-
-    // requests to server are asynchronous, need to wait for server to respond
+    /**
+     * Waits until all coroutines in client#shortLivingRequestsCS scope are finished.
+     */
     fun waitForRequestsToFinish() = runBlocking {
-        Logger.trace("Waiting for requests to finish")
-        while (client.shortLivingRequestsCS.coroutineContext.job.children.toList().isNotEmpty()) {
-            delay(500L)
-        }
+        // requests to server are asynchronous, need to wait for server to respond
+        Logger.trace("Waiting for requests to finish.")
+        client.waitForServerRequestsToFinish()
         Logger.trace("Finished waiting!")
-    }
-
-    protected fun buildProject(compiler: Compiler, buildDirName: String) {
-        val buildCommand = getBuildCommand(compiler, buildDirName)
-        Logger.trace("Building the project with compiler: $compiler, and build dir name: $buildDirName")
-        Logger.trace("BUILD COMMAND: $buildCommand")
-        ProcessBuilder("bash", "-c", buildCommand)
-            .directory(projectPath.toFile())
-            .start()
-            .waitFor()
-
-        Logger.trace("BUILDING FINISHED!")
-        buildDirectoryPath.assertFileOrDirExists("build directory after building project does not exist!")
     }
 
     @AfterEach
@@ -128,9 +114,6 @@ abstract class BaseGenerationTestCase {
     @AfterAll
     fun tearDownAll() {
         Logger.trace("tearDownAll of BaseGenerationTest is called")
-        // somehow project service Client is not disposed automatically by the ide, and the exception is thrown that
-        // timer related to heartbeat is not disposed. So let's dispose it manually.
-        // client.dispose()
         waitForRequestsToFinish()
         fixture.tearDown()
         stopKoin()
