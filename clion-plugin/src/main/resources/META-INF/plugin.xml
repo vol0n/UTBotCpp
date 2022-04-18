@@ -92,5 +92,8 @@
         <action id="com.huawei.utbot.cpp.actions.AskServerToGenerateJsonForProjectConfiguration"
                 class="com.huawei.utbot.cpp.actions.AskServerToGenerateJsonForProjectConfiguration" text="Try To Generate Json"
                 description="Ask server to generate missing json files"/>
+        <action id="com.huawei.utbot.cpp.actions.utils.ShowWizardAction"
+                class="com.huawei.utbot.cpp.actions.utils.ShowWizardAction" text="Show wizard"
+                description="Show wizard"/>
     </actions>
 </idea-plugin>
