@@ -1,6 +1,7 @@
 package com.huawei.utbot.cpp.utils
 
 import com.huawei.utbot.cpp.client.Client
+import com.huawei.utbot.cpp.services.GeneratorSettings
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -11,6 +12,12 @@ import kotlinx.coroutines.job
 
 val AnActionEvent.client: Client
     get() = this.getRequiredData(CommonDataKeys.PROJECT).service()
+
+val Project.utbotSettings: UTBotSettings
+    get() = this.service()
+
+val Project.generatorSettings: GeneratorSettings
+    get() = this.service()
 
 fun String.convertFromRemotePathIfNeeded(project: Project): String {
     return project.service<UTBotSettings>().convertFromRemotePathIfNeeded(this)

@@ -14,6 +14,7 @@ import com.intellij.openapi.ui.DialogPanel
 import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.CollectionListModel
 import com.intellij.ui.ToolbarDecorator
+import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.layout.panel
 import javax.swing.JList
 import java.awt.Dimension
@@ -83,6 +84,13 @@ class UTBotConfigurable(private val targetProject: Project) : BoundConfigurable(
                     setMaxSize()
                     onApplyCallBacks.add { utbotSettings.testDirPath = this.text }
                     onResetCallBacks.add { this.text = utbotSettings.testDirPath }
+                }
+            }
+            row(UTBot.message("settings.project.cmakeOptions")) {
+                textField(utbotSettings::cmakeOptions).applyToComponent {
+                    maximumSize = TEXT_FIELD_MAX_SIZE
+                    onApplyCallBacks.add { utbotSettings.cmakeOptions = text }
+                    onResetCallBacks.add { text = utbotSettings.cmakeOptions }
                 }
             }
             val checkBoxDs = mapOf(

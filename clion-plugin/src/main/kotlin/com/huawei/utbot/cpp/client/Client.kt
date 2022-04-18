@@ -47,6 +47,7 @@ import org.tinylog.Level
 
 import org.tinylog.kotlin.Logger
 import org.tinylog.provider.ProviderRegistry
+import kotlin.coroutines.EmptyCoroutineContext
 
 @Service
 class Client(val project: Project) : Disposable, KoinComponent {
@@ -432,6 +433,19 @@ class Client(val project: Project) : Disposable, KoinComponent {
                     Logger.trace { "There are unfinished requests:\n${shortLivingRequestsCS.children}\n${longLivingRequestsCS.children}" }
                     Logger.trace("Waiting $DELAY_TIME ms for them to cancel!")
                     delay(DELAY_TIME)
+                }
+            }
+        }
+    }
+
+    fun pingServer(port: Int, hostName: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit, timeoutMillis: Long = SERVER_TIMEOUT) {
+        shortLivingRequestsCS.launch {
+            withTimeout(timeoutMillis) {
+                try {
+                    grpcStub.handshake(getDummyRequest())
+                    onSuccess()
+                } catch (e: Exception) {
+                    onFailure(e)
                 }
             }
         }
