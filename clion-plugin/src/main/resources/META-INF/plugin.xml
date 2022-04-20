@@ -40,12 +40,6 @@
         />
     </extensions>
 
-    <applicationListeners>
-        <listener
-                class="com.huawei.utbot.cpp.messaging.FileOpenListener"
-                topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
-    </applicationListeners>
-
 
     <actions>
         <group id="actions.UTBot.editor" text="UTBot Actions" popup="true">
