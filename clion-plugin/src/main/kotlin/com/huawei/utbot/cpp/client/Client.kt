@@ -438,7 +438,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
         }
     }
 
-    fun pingServer(port: Int, hostName: String, onSuccess: () -> Unit, onFailure: (Throwable) -> Unit, timeoutMillis: Long = SERVER_TIMEOUT) {
+    fun pingServer(port: Int, hostName: String, onSuccess: () -> Unit = {}, onFailure: (Throwable) -> Unit = {}, timeoutMillis: Long = SERVER_TIMEOUT) {
         shortLivingRequestsCS.launch {
             withTimeout(timeoutMillis) {
                 try {

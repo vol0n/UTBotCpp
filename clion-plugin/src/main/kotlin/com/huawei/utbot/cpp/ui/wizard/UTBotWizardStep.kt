@@ -6,23 +6,19 @@ import com.intellij.ide.wizard.Step
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import com.intellij.openapi.util.IconLoader
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
-import com.intellij.ui.components.htmlComponent
+import com.intellij.ui.dsl.builder.COLUMNS_LARGE
+import com.intellij.ui.dsl.builder.COLUMNS_MEDIUM
 import com.intellij.ui.dsl.builder.Row
 import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.layout.ComponentPredicate
 import javax.swing.Icon
 import javax.swing.JComponent
 import kotlin.properties.Delegates
-
-object MyIcons {
-    @JvmField
-    val UTBOT = IconLoader.getIcon("/icons/utbotIcon.png", javaClass)
-}
 
 abstract class UTBotWizardStep : Step {
     override fun _init() {}
@@ -30,8 +26,8 @@ abstract class UTBotWizardStep : Step {
 
     override fun _commit(finishChosen: Boolean) {}
 
-    override fun getIcon(): Icon {
-        return MyIcons.UTBOT
+    override fun getIcon(): Icon? {
+        return null
     }
 
     abstract fun createComponent(): JComponent
@@ -40,16 +36,17 @@ abstract class UTBotWizardStep : Step {
         return mainComponent
     }
 
-    override fun getPreferredFocusedComponent(): JComponent {
+    override fun getPreferredFocusedComponent(): JComponent? {
         return mainComponent
     }
 
     fun getTextResource(resource: String): String {
-        return this.javaClass.classLoader.getResource(resource)?.readText() ?: error("Unable to get resource: $resource")
+        return this.javaClass.classLoader.getResource(resource)?.readText()
+            ?: error("Unable to get resource: $resource")
     }
 
     fun Row.addHtml(htmlResource: String) {
-        this.cell(htmlComponent(getTextResource(htmlResource)))
+        this.text(getTextResource(htmlResource), maxLineLength = 100)
     }
 }
 
@@ -103,13 +100,13 @@ class ConnectionStep(val project: Project) : UTBotWizardStep() {
                 textField().also {
                     it.bindText(project.utbotSettings::serverName)
                     hostTextField = it.component
-                }
+                }.columns(COLUMNS_MEDIUM)
             }
             row("Port") {
                 intTextField().also {
                     it.bindIntText(project.utbotSettings::port)
                     portTextField = it.component
-                }
+                }.columns(COLUMNS_MEDIUM)
             }
             row {
                 button("Test Connection") {
@@ -120,7 +117,6 @@ class ConnectionStep(val project: Project) : UTBotWizardStep() {
                     }, onFailure = {
                         pingedServer = false
                         isPingingServer = false
-                        Messages.showErrorDialog(null as Project?, it.message, "Ping Server Failed!")
                     })
                 }
 
@@ -130,12 +126,14 @@ class ConnectionStep(val project: Project) : UTBotWizardStep() {
                         pingStateListeners.add(listener)
                     }
                 })
+
                 label("Successfully pinged the server!").visibleIf(object : ComponentPredicate() {
                     override fun invoke() = pingedServer == true
                     override fun addListener(listener: (Boolean) -> Unit) {
                         pingListeners.add { listener(it == true) }
                     }
                 })
+
                 label("Unable to ping the server!").visibleIf(object : ComponentPredicate() {
                     override fun invoke() = pingedServer == false
                     override fun addListener(listener: (Boolean) -> Unit) {
@@ -154,7 +152,9 @@ class RemotePathStep(private val project: Project) : UTBotWizardStep() {
                 addHtml("media/remote_path.html")
             }
             row {
-                textField().bindText(project.utbotSettings::remotePath)
+                textField()
+                    .bindText(project.utbotSettings::remotePath)
+                    .columns(COLUMNS_LARGE)
             }
         }
     }
@@ -167,13 +167,17 @@ class BuildOptionsStep(private val project: Project) : UTBotWizardStep() {
                 addHtml("media/build_dir.html")
             }
             row {
-                textField().bindText(project.utbotSettings::buildDirPath)
+                textField()
+                    .bindText(project.utbotSettings::buildDirPath)
+                    .columns(COLUMNS_LARGE)
             }
             row {
                 addHtml("media/cmake_options.html")
             }
             row {
-                textField().bindText(project.utbotSettings::cmakeOptions)
+                textField()
+                    .bindText(project.utbotSettings::cmakeOptions)
+                    .columns(COLUMNS_LARGE)
             }
         }
     }
