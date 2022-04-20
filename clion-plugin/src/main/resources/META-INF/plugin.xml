@@ -14,6 +14,7 @@
     <extensions defaultExtensionNs="com.intellij">
          <codeInsight.lineMarkerProvider language="ObjectiveC"
                                             implementationClass="com.huawei.utbot.cpp.ui.UTBotTestRunLineMarkerProvider"/>
+        <highlightErrorFilter implementation="com.huawei.utbot.cpp.ui.TestFilesErrorFilter"/>
         <projectService serviceImplementation="com.huawei.utbot.cpp.services.GeneratorSettings"/>
         <projectService serviceImplementation="com.huawei.utbot.cpp.services.UTBotSettings"/>
         <coverageEngine implementation="com.huawei.utbot.cpp.coverage.UTBotCoverageEngine"/>
@@ -38,6 +39,13 @@
                     secondary="true"
         />
     </extensions>
+
+    <applicationListeners>
+        <listener
+                class="com.huawei.utbot.cpp.messaging.FileOpenListener"
+                topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </applicationListeners>
+
 
     <actions>
         <group id="actions.UTBot.editor" text="UTBot Actions" popup="true">
