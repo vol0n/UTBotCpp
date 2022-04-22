@@ -64,6 +64,12 @@ data class UTBotSettings(
             state.buildDirPath = value
         }
 
+    var buildDirPathRelative: String
+        get() = state.buildDirPath.getRelativeToProjectPath(projectPath)
+        set(value) {
+            state.buildDirPath = Paths.get(projectPath).resolve(value).toString()
+        }
+
     var testDirPath: String
         get() = state.testDirPath
         set(value) {

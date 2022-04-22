@@ -2,6 +2,7 @@ package com.huawei.utbot.cpp.ui
 
 import com.huawei.utbot.cpp.actions.AskServerToGenerateJsonForProjectConfiguration
 import com.huawei.utbot.cpp.actions.ConfigureProjectAction
+import com.huawei.utbot.cpp.actions.ShowWizardAction
 import com.huawei.utbot.cpp.messaging.ConnectionStatus
 import com.huawei.utbot.cpp.messaging.UTBotEventsListener
 import com.huawei.utbot.cpp.client.Client
@@ -98,6 +99,8 @@ object StatusBarActionsPopup {
         val actionGroup = DefaultActionGroup()
         actionGroup.isPopup = true
 
+        actionGroup.add(ShowWizardAction())
+        actionGroup.addSeparator()
         actionGroup.add(ConfigureProjectAction())
         actionGroup.addSeparator()
         actionGroup.add(AskServerToGenerateJsonForProjectConfiguration())
