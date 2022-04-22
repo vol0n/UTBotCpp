@@ -11,7 +11,6 @@ import com.intellij.openapi.fileChooser.FileChooserDescriptorFactory
 import com.intellij.openapi.options.BoundConfigurable
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
-import com.intellij.openapi.ui.TextFieldWithBrowseButton
 import com.intellij.ui.CollectionListModel
 import com.intellij.ui.ToolbarDecorator
 import com.intellij.ui.dsl.builder.BottomGap
@@ -22,7 +21,6 @@ import com.intellij.ui.dsl.builder.bindIntText
 import com.intellij.ui.dsl.builder.bindSelected
 import com.intellij.ui.dsl.builder.bindText
 import com.intellij.ui.dsl.builder.columns
-import com.intellij.ui.layout.applyToComponent
 import com.intellij.ui.dsl.builder.panel
 import javax.swing.JList
 import kotlin.reflect.KMutableProperty0
@@ -39,8 +37,6 @@ class UTBotConfigurable(private val targetProject: Project) : BoundConfigurable(
     private val logger = Logger.getInstance("ProjectConfigurable")
     private val sourcePathListModel =
         CollectionListModel(*targetProject.getService(UTBotSettings::class.java).sourcePaths.toTypedArray())
-    private val onApplyCallBacks = mutableListOf<() -> Unit>()
-    private val onResetCallBacks = mutableListOf<() -> Unit>()
     private val panel = createMainPanel()
 
     init {
@@ -83,6 +79,18 @@ class UTBotConfigurable(private val targetProject: Project) : BoundConfigurable(
 
                 row(UTBot.message("settings.project.sourcePaths")) {
                     cell(createSourcesListComponent())
+                        .onApply {
+                            utbotSettings.sourcePaths = sourcePathListModel.toList()
+                        }
+                        .onReset {
+                            sourcePathListModel.also {
+                                it.removeAll()
+                                it.addAll(0, utbotSettings.sourcePaths)
+                            }
+                        }
+                        .onIsModified {
+                            (sourcePathListModel.toList() != utbotSettings.sourcePaths)
+                        }
                     topGap(TopGap.SMALL)
                     bottomGap(BottomGap.SMALL)
                 }
@@ -154,26 +162,20 @@ class UTBotConfigurable(private val targetProject: Project) : BoundConfigurable(
             .createPanel()
 
     override fun isModified(): Boolean {
-        return panel.isModified() || super.isModified() || (sourcePathListModel.toList() != utbotSettings.sourcePaths)
+        return panel.isModified()
     }
 
     override fun apply() {
         panel.apply()
-        utbotSettings.sourcePaths = sourcePathListModel.toList()
         utbotSettings.fireUTBotSettingsChanged()
     }
 
     override fun reset() {
         panel.reset()
-        sourcePathListModel.also {
-            it.removeAll()
-            it.addAll(0, utbotSettings.sourcePaths)
-        }
     }
 
     companion object {
         val TEXT_FIELD_MAX_SIZE = Dimension(370, 100)
-        val INT_FIELD_MAX_SIZE = Dimension(100, 100)
         val SOURCES_LIST_SIZE = Dimension(500, 200)
     }
 }
