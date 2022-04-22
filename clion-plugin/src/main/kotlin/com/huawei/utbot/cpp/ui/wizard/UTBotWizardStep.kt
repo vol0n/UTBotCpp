@@ -1,11 +1,15 @@
 package com.huawei.utbot.cpp.ui.wizard
 
+import com.huawei.utbot.cpp.actions.utils.getDummyRequest
 import com.huawei.utbot.cpp.client.Client
+import com.huawei.utbot.cpp.client.GrpcClient
 import com.huawei.utbot.cpp.utils.utbotSettings
+import com.huawei.utbot.cpp.utils.validateOnInput
 import com.intellij.ide.wizard.Step
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogPanel
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.dsl.builder.COLUMNS_LARGE
@@ -16,13 +20,15 @@ import com.intellij.ui.dsl.builder.columns
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.layout.ComponentPredicate
 import com.intellij.util.ui.HtmlPanel
-import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.properties.Delegates
-import java.awt.Color
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.awt.Component
 import java.awt.Dimension
 
@@ -121,16 +127,27 @@ class ServerInstallationStep : UTBotWizardStep() {
 class ConnectionStep(val project: Project) : UTBotWizardStep() {
     lateinit var hostTextField: JBTextField
     lateinit var portTextField: JBTextField
+    private val cs = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
     private val pingListeners = mutableListOf<(Boolean?) -> Unit>()
     private var pingedServer: Boolean? by Delegates.observable(null) { _, _, newValue ->
         pingListeners.forEach { listener ->
             listener.invoke(newValue)
         }
     }
+
     private val pingStateListeners = mutableListOf<(Boolean) -> Unit>()
     private var isPingingServer: Boolean by Delegates.observable(false) { _, _, newValue ->
         pingStateListeners.forEach { listener ->
             listener(newValue)
+        }
+    }
+
+    suspend fun pingServer(port: Int, host: String) {
+        GrpcClient(port, host).apply {
+            use {
+                stub.handshake(getDummyRequest())
+            }
         }
     }
 
@@ -146,20 +163,37 @@ class ConnectionStep(val project: Project) : UTBotWizardStep() {
             row("Port") {
                 intTextField().also {
                     it.bindIntText(project.utbotSettings::port)
-                    portTextField = it.component
-                }.columns(COLUMNS_MEDIUM)
+                }.columns(COLUMNS_MEDIUM).applyToComponent {
+                    portTextField = this
+                    validateOnInput(project.service<Client>()) {
+                        if (portTextField.text.toIntOrNull() == null)
+                            ValidationInfo("Integer number expected!", portTextField)
+                        else
+                            null
+                    }
+                }
             }
             row {
                 button("Test Connection") {
-                    isPingingServer = true
-                    project.service<Client>().pingServer(portTextField.text.toInt(), hostTextField.text, onSuccess = {
-                        pingedServer = true
-                        isPingingServer = false
-                    }, onFailure = {
-                        pingedServer = false
-                        isPingingServer = false
-                    })
-                }
+                    cs.launch {
+                        isPingingServer = true
+                        try {
+                            pingServer(portTextField.text.toInt(), hostTextField.text)
+                            pingedServer = true
+                        } catch (e: io.grpc.StatusException) {
+                            pingedServer = false
+                        } finally {
+                            isPingingServer = false
+                        }
+                    }
+                }.enabledIf(object : ComponentPredicate() {
+                    override fun invoke(): Boolean = !isPingingServer
+                    override fun addListener(listener: (Boolean) -> Unit) {
+                        pingStateListeners.add {
+                            listener(!isPingingServer)
+                        }
+                    }
+                })
 
                 cell(JBLabel(com.intellij.ui.AnimatedIcon.Default())).visibleIf(object : ComponentPredicate() {
                     override fun invoke() = isPingingServer

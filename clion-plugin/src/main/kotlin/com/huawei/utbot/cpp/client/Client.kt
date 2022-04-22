@@ -450,19 +450,6 @@ class Client(val project: Project) : Disposable, KoinComponent {
         }
     }
 
-    fun pingServer(port: Int, hostName: String, onSuccess: () -> Unit = {}, onFailure: (Throwable) -> Unit = {}, timeoutMillis: Long = SERVER_TIMEOUT) {
-        shortLivingRequestsCS.launch {
-            withTimeout(timeoutMillis) {
-                try {
-                    grpcStub.handshake(getDummyRequest())
-                    onSuccess()
-                } catch (e: Exception) {
-                    onFailure(e)
-                }
-            }
-        }
-    }
-
     companion object {
         var IS_TEST_MODE = false
         const val RANDOM_SEQUENCE_MAX_VALUE = 10
