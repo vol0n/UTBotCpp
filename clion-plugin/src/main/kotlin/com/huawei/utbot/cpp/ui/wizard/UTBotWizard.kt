@@ -17,6 +17,8 @@ class UTBotWizard(project: Project) : AbstractWizard<UTBotWizardStep>("UTBot: Qu
         setSize(400, 400)
     }
 
+    override fun isModal(): Boolean = true
+
     override fun helpAction() {
         BrowserUtil.browse("https://github.com/UnitTestBot/UTBotCpp/wiki")
     }
