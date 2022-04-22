@@ -5,6 +5,7 @@ import com.huawei.utbot.cpp.services.GeneratorSettings
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.CoroutineScope
@@ -32,3 +33,6 @@ val CoroutineScope.children
 
 fun CoroutineScope.hasChildren(): Boolean = children.isNotEmpty()
 
+fun invokeOnEdt(task: ()->Unit) {
+    ApplicationManager.getApplication().invokeLater(task)
+}

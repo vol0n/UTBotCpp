@@ -26,8 +26,11 @@ import testsgen.TestsGenServiceGrpcKt
 
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.huawei.utbot.cpp.ui.OutputWindowProvider
+import com.huawei.utbot.cpp.ui.wizard.UTBotWizard
 import com.huawei.utbot.cpp.utils.children
 import com.huawei.utbot.cpp.utils.hasChildren
+import com.huawei.utbot.cpp.utils.invokeOnEdt
+import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -87,6 +90,7 @@ class Client(val project: Project) : Disposable, KoinComponent {
         Logger.info { "Connecting to server on host: ${settings.serverName} , port: ${settings.port}" }
         subscribeToEvents()
         startPeriodicHeartBeat()
+        showWizardOnFirstProjectOpen()
     }
 
     private fun setupDependencies(project: Project) {
@@ -105,6 +109,14 @@ class Client(val project: Project) : Disposable, KoinComponent {
         val stub = grpcClient.stub
         metadata.put(io.grpc.Metadata.Key.of("clientId", io.grpc.Metadata.ASCII_STRING_MARSHALLER), clientID)
         return io.grpc.stub.MetadataUtils.attachHeaders(stub, metadata)
+    }
+
+    private fun showWizardOnFirstProjectOpen() {
+        RunOnceUtil.runOnceForProject(project, "Show UTBot Wizard") {
+            invokeOnEdt {
+                UTBotWizard(project).showAndGet()
+            }
+        }
     }
 
     private fun subscribeToEvents() {
