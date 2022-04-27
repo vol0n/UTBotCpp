@@ -20,6 +20,9 @@ val Project.utbotSettings: UTBotSettings
 val Project.generatorSettings: GeneratorSettings
     get() = this.service()
 
+val Project.client: Client
+    get() = this.service()
+
 fun String.convertFromRemotePathIfNeeded(project: Project): String {
     return project.service<UTBotSettings>().convertFromRemotePathIfNeeded(this)
 }

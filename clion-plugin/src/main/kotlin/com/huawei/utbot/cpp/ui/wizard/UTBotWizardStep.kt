@@ -25,6 +25,7 @@ import javax.swing.Icon
 import javax.swing.JComponent
 import javax.swing.JPanel
 import kotlin.properties.Delegates
+import kotlin.reflect.KMutableProperty0
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -124,26 +125,30 @@ class ServerInstallationStep : UTBotWizardStep() {
     }
 }
 
+class ObservableValue<T>(initialValue: T) {
+    private val changeListeners: MutableList<(T)->Unit> = mutableListOf()
+    var value: T by Delegates.observable(initialValue) { _, _, newVal ->
+        changeListeners.forEach {
+            it(newVal)
+        }
+    }
+
+    fun addListener(listener: (T)->Unit) {
+        changeListeners.add(listener)
+    }
+}
+
+
 class ConnectionStep(val project: Project) : UTBotWizardStep() {
-    lateinit var hostTextField: JBTextField
-    lateinit var portTextField: JBTextField
+    private lateinit var hostTextField: JBTextField
+    private lateinit var portTextField: JBTextField
     private val cs = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    private val pingListeners = mutableListOf<(Boolean?) -> Unit>()
-    private var pingedServer: Boolean? by Delegates.observable(null) { _, _, newValue ->
-        pingListeners.forEach { listener ->
-            listener.invoke(newValue)
-        }
-    }
+    private val pingedServer = ObservableValue<Boolean?>(null)
+    private val isPingingServer = ObservableValue<Boolean>(false)
+    private val isValidInput = ObservableValue<Boolean>(true)
 
-    private val pingStateListeners = mutableListOf<(Boolean) -> Unit>()
-    private var isPingingServer: Boolean by Delegates.observable(false) { _, _, newValue ->
-        pingStateListeners.forEach { listener ->
-            listener(newValue)
-        }
-    }
-
-    suspend fun pingServer(port: Int, host: String) {
+    private suspend fun pingServer(port: Int, host: String) {
         GrpcClient(port, host).apply {
             use {
                 stub.handshake(getDummyRequest())
@@ -166,53 +171,55 @@ class ConnectionStep(val project: Project) : UTBotWizardStep() {
                 }.columns(COLUMNS_MEDIUM).applyToComponent {
                     portTextField = this
                     validateOnInput(project.service<Client>()) {
-                        if (portTextField.text.toIntOrNull() == null)
+                        if (portTextField.text.toIntOrNull() == null) {
+                            isValidInput.value = false
                             ValidationInfo("Integer number expected!", portTextField)
-                        else
+                        } else {
+                            isValidInput.value = true
                             null
+                        }
                     }
                 }
             }
             row {
                 button("Test Connection") {
                     cs.launch {
-                        isPingingServer = true
+                        isPingingServer.value = true
                         try {
                             pingServer(portTextField.text.toInt(), hostTextField.text)
-                            pingedServer = true
+                            pingedServer.value = true
                         } catch (e: io.grpc.StatusException) {
-                            pingedServer = false
+                            pingedServer.value = false
                         } finally {
-                            isPingingServer = false
+                            isPingingServer.value = false
                         }
                     }
                 }.enabledIf(object : ComponentPredicate() {
-                    override fun invoke(): Boolean = !isPingingServer
+                    override fun invoke(): Boolean = !isPingingServer.value && isValidInput.value
                     override fun addListener(listener: (Boolean) -> Unit) {
-                        pingStateListeners.add {
-                            listener(!isPingingServer)
-                        }
+                        isPingingServer.addListener(listener)
+                        isValidInput.addListener(listener)
                     }
                 })
 
                 cell(JBLabel(com.intellij.ui.AnimatedIcon.Default())).visibleIf(object : ComponentPredicate() {
-                    override fun invoke() = isPingingServer
+                    override fun invoke() = isPingingServer.value
                     override fun addListener(listener: (Boolean) -> Unit) {
-                        pingStateListeners.add(listener)
+                        isPingingServer.addListener(listener)
                     }
                 })
 
                 label("Successfully pinged the server!").visibleIf(object : ComponentPredicate() {
-                    override fun invoke() = pingedServer == true
+                    override fun invoke() = pingedServer.value == true
                     override fun addListener(listener: (Boolean) -> Unit) {
-                        pingListeners.add { listener(it == true) }
+                        pingedServer.addListener { listener(it == true) }
                     }
                 })
 
                 label("Unable to ping the server!").visibleIf(object : ComponentPredicate() {
-                    override fun invoke() = pingedServer == false
+                    override fun invoke() = pingedServer.value == false
                     override fun addListener(listener: (Boolean) -> Unit) {
-                        pingListeners.add { listener(pingedServer == false) }
+                        pingedServer.addListener { listener(it == false) }
                     }
                 })
             }

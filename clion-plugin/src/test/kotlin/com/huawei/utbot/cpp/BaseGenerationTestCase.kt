@@ -1,7 +1,6 @@
 package com.huawei.utbot.cpp
 
 import com.huawei.utbot.cpp.client.Client
-import com.huawei.utbot.cpp.models.UTBotTarget
 import com.huawei.utbot.cpp.services.GeneratorSettings
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.huawei.utbot.cpp.ui.UTBotTargetsController
@@ -13,8 +12,6 @@ import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
 import com.intellij.util.io.delete
 import kotlin.io.path.name
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.job
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach

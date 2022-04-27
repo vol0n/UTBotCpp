@@ -26,11 +26,8 @@ import testsgen.TestsGenServiceGrpcKt
 
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.huawei.utbot.cpp.ui.OutputWindowProvider
-import com.huawei.utbot.cpp.ui.wizard.UTBotWizard
 import com.huawei.utbot.cpp.utils.children
 import com.huawei.utbot.cpp.utils.hasChildren
-import com.huawei.utbot.cpp.utils.invokeOnEdt
-import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -50,7 +47,7 @@ import org.tinylog.Level
 
 import org.tinylog.kotlin.Logger
 import org.tinylog.provider.ProviderRegistry
-import kotlin.coroutines.EmptyCoroutineContext
+import kotlinx.coroutines.Job
 
 @Service
 class Client(val project: Project) : Disposable, KoinComponent {
@@ -90,7 +87,6 @@ class Client(val project: Project) : Disposable, KoinComponent {
         Logger.info { "Connecting to server on host: ${settings.serverName} , port: ${settings.port}" }
         subscribeToEvents()
         startPeriodicHeartBeat()
-        showWizardOnFirstProjectOpen()
     }
 
     private fun setupDependencies(project: Project) {
@@ -111,13 +107,6 @@ class Client(val project: Project) : Disposable, KoinComponent {
         return io.grpc.stub.MetadataUtils.attachHeaders(stub, metadata)
     }
 
-    private fun showWizardOnFirstProjectOpen() {
-        RunOnceUtil.runOnceForProject(project, "Show UTBot Wizard") {
-            invokeOnEdt {
-                UTBotWizard(project).showAndGet()
-            }
-        }
-    }
 
     private fun subscribeToEvents() {
         project.messageBus.connect(this)
@@ -234,6 +223,12 @@ class Client(val project: Project) : Disposable, KoinComponent {
                 delay(HEARTBEAT_INTERVAL)
             }
             Logger.info("Stopped heartBeating the server!")
+        }
+    }
+
+    fun execute(request: Request) {
+        shortLivingRequestsCS.launch {
+            request.execute(grpcStub, coroutineContext[Job])
         }
     }
 

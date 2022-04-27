@@ -1,10 +1,13 @@
 package com.huawei.utbot.cpp.actions
 
 import com.huawei.utbot.cpp.UTBot
+import com.huawei.utbot.cpp.actions.utils.getProjectConfigRequestMessage
+import com.huawei.utbot.cpp.client.Requests.CreateBuildDirRequest
 import com.huawei.utbot.cpp.utils.client
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import testsgen.Testgen
 
 class ConfigureProjectAction : NotificationAction(UTBot.message("projectConfigure.configure")) {
     override fun actionPerformed(e: AnActionEvent, n: Notification) {
@@ -12,7 +15,13 @@ class ConfigureProjectAction : NotificationAction(UTBot.message("projectConfigur
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        e.client.configureProject()
+        CreateBuildDirRequest(
+            e.project!!,
+            "Create build directory...",
+            getProjectConfigRequestMessage(e.project!!, Testgen.ConfigMode.CHECK)
+        ).apply {
+            e.client.execute(this)
+        }
     }
 
     override fun update(e: AnActionEvent) {

@@ -1,6 +1,7 @@
 package com.huawei.utbot.cpp.actions
 
 import com.huawei.utbot.cpp.actions.utils.getCoverageAndResultsRequest
+import com.huawei.utbot.cpp.client.Requests.RunWithCoverageRequest
 import com.huawei.utbot.cpp.utils.client
 import com.huawei.utbot.cpp.models.TestNameAndTestSuite
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -18,7 +19,12 @@ class RunWithCoverageAction(val element: PsiElement) : GenerateTestsBaseAction()
         val suiteName = testArgs.suite
         val testedMethodName = testArgs.name
         val request = getCoverageAndResultsRequest(e, suiteName, testedMethodName)
-        e.client.getCoverageAndResults(request)
+        RunWithCoverageRequest(
+            e.project!!,
+            request
+        ).apply {
+            e.client.execute(this)
+        }
     }
 
     override fun updateIfServerAvailable(e: AnActionEvent) {}

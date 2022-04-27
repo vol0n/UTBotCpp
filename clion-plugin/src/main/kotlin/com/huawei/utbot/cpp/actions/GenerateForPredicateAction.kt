@@ -4,6 +4,8 @@ import com.huawei.utbot.cpp.actions.utils.getFunctionRequestMessage
 import com.huawei.utbot.cpp.actions.utils.getPredicateRequestMessage
 import com.huawei.utbot.cpp.utils.client
 import com.huawei.utbot.cpp.actions.utils.getContainingFunction
+import com.huawei.utbot.cpp.client.Requests.FunctionReturnTypeRequest
+import com.huawei.utbot.cpp.client.Requests.PredicateRequest
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.ui.ComponentValidator
 import com.intellij.openapi.ui.ValidationInfo
@@ -13,6 +15,7 @@ import com.intellij.ui.DocumentAdapter
 import com.intellij.ui.components.fields.ExtendableTextField
 import javax.swing.ListSelectionModel
 import javax.swing.event.DocumentEvent
+import testsgen.Testgen
 import testsgen.Util.ValidationType
 import java.awt.Dimension
 import java.awt.event.KeyAdapter
@@ -89,7 +92,13 @@ class GenerateForPredicateAction : GenerateTestsBaseAction() {
 
         fun sendPredicateToServer(validationType: ValidationType, valueToCompare: String, comparisonOperator: String) {
             val predicateRequest = getPredicateRequestMessage(validationType, valueToCompare, comparisonOperator, e)
-            e.client.generateForPredicate(predicateRequest)
+            PredicateRequest(
+                predicateRequest,
+                e.project!!,
+                "Generate for predicate..."
+            ).apply {
+                e.client.execute(this)
+            }
         }
 
         fun chooseComparisonOperator(type: ValidationType, proceedWithComparisonOperator: (comparisonOperator: String) -> Unit) {
@@ -115,13 +124,17 @@ class GenerateForPredicateAction : GenerateTestsBaseAction() {
             popup.showInBestPositionFor(e.dataContext)
         }
 
-        e.client.requestFunctionReturnTypeAndProcess(getFunctionRequestMessage(e)) { functionReturnType ->
+        FunctionReturnTypeRequest(
+            getFunctionRequestMessage(e)
+        ) { functionReturnType ->
             val type = functionReturnType.validationType
             chooseComparisonOperator(type) { comparisonOperator ->
                 chooseReturnValue(type) { valueToCompare ->
                     sendPredicateToServer(type, valueToCompare, comparisonOperator)
                 }
             }
+        }.apply {
+            e.client.execute(this)
         }
     }
 

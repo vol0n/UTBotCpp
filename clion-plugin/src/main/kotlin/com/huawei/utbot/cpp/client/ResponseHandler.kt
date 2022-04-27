@@ -10,6 +10,7 @@ import com.huawei.utbot.cpp.coverage.UTBotCoverageSuite
 import com.huawei.utbot.cpp.messaging.UTBotTestResultsReceivedListener
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.huawei.utbot.cpp.ui.UTBotRequestProgressIndicator
+import com.huawei.utbot.cpp.utils.invokeOnEdt
 import com.huawei.utbot.cpp.utils.notifyError
 import com.huawei.utbot.cpp.utils.notifyInfo
 import com.huawei.utbot.cpp.utils.notifyUnknownResponse
@@ -238,7 +239,7 @@ class ResponseHandler(val project: Project, val client: Client) {
         dataHandler: (T, UTBotRequestProgressIndicator) -> Unit,
     ): T? {
         val uiProgress = UTBotRequestProgressIndicator(uiProgressName)
-        ApplicationManager.getApplication().invokeLater {
+        invokeOnEdt {
             uiProgress.start()
         }
         uiProgress.requestJob = coroutineContext[Job]
@@ -253,7 +254,7 @@ class ResponseHandler(val project: Project, val client: Client) {
                 lastReceivedData = data
                 dataHandler(data, uiProgress)
             }
-        ApplicationManager.getApplication().invokeLater {
+        invokeOnEdt {
             uiProgress.complete()
         }
         return lastReceivedData
