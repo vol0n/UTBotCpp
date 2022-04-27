@@ -2,8 +2,8 @@ package com.huawei.utbot.cpp.actions
 
 import com.huawei.utbot.cpp.UTBot
 import com.huawei.utbot.cpp.actions.utils.getProjectConfigRequestMessage
-import com.huawei.utbot.cpp.client.Requests.CreateBuildDirRequest
-import com.huawei.utbot.cpp.utils.client
+import com.huawei.utbot.cpp.client.Requests.GenerateJsonFilesRequest
+import com.huawei.utbot.cpp.utils.execute
 import com.intellij.notification.Notification
 import com.intellij.notification.NotificationAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -16,13 +16,10 @@ class AskServerToGenerateJsonForProjectConfiguration :
     }
 
     override fun actionPerformed(e: AnActionEvent) {
-        CreateBuildDirRequest(
+        GenerateJsonFilesRequest(
             e.project!!,
-            "Create build directory...",
             getProjectConfigRequestMessage(e.project!!, Testgen.ConfigMode.GENERATE_JSON_FILES)
-        ).apply {
-            e.client.execute(this)
-        }
+        ).execute(e)
     }
 
     override fun update(e: AnActionEvent) {

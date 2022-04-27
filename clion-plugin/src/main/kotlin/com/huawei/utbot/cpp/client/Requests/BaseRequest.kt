@@ -14,7 +14,7 @@ import testsgen.TestsGenServiceGrpcKt
  * It sends a request of type [X] and handles the response of type [Y].
  */
 abstract class BaseRequest<X, Y>(val request: X) : Request {
-    abstract val description: String
+    abstract val logMessage: String
     override suspend fun execute(stub: TestsGenServiceGrpcKt.TestsGenServiceCoroutineStub, cancellationJob: Job?) {
         logRequest()
         stub.send(cancellationJob).handle(cancellationJob)
@@ -25,7 +25,7 @@ abstract class BaseRequest<X, Y>(val request: X) : Request {
     abstract suspend fun Y.handle(cancellationJob: Job?)
 
     open fun logRequest() {
-        Logger.info(description)
+        Logger.info(logMessage)
         Logger.trace { "$request" }
     }
 }

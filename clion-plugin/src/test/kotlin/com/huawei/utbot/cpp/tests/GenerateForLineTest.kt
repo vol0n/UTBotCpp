@@ -6,8 +6,6 @@ import com.huawei.utbot.cpp.CppCompiler
 import com.huawei.utbot.cpp.Gcc
 import com.huawei.utbot.cpp.assertAllFilesNotEmptyRecursively
 import com.huawei.utbot.cpp.assertFileOrDirExists
-import com.huawei.utbot.cpp.services.GeneratorSettings
-import com.intellij.openapi.components.service
 import com.intellij.openapi.editor.Editor
 import org.junit.jupiter.api.Test
 import org.tinylog.kotlin.Logger

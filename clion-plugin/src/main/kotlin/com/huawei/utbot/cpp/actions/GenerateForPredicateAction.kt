@@ -94,8 +94,7 @@ class GenerateForPredicateAction : GenerateTestsBaseAction() {
             val predicateRequest = getPredicateRequestMessage(validationType, valueToCompare, comparisonOperator, e)
             PredicateRequest(
                 predicateRequest,
-                e.project!!,
-                "Generate for predicate..."
+                e.project!!
             ).apply {
                 e.client.execute(this)
             }

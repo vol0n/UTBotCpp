@@ -1,6 +1,7 @@
 package com.huawei.utbot.cpp.utils
 
 import com.huawei.utbot.cpp.client.Client
+import com.huawei.utbot.cpp.client.Request
 import com.huawei.utbot.cpp.services.GeneratorSettings
 import com.huawei.utbot.cpp.services.UTBotSettings
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -19,6 +20,10 @@ val Project.utbotSettings: UTBotSettings
 
 val Project.generatorSettings: GeneratorSettings
     get() = this.service()
+
+fun Request.execute(e: AnActionEvent) {
+    e.client.execute(this)
+}
 
 val Project.client: Client
     get() = this.service()

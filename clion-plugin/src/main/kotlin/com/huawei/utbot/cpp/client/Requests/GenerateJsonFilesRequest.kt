@@ -1,5 +1,6 @@
 package com.huawei.utbot.cpp.client.Requests
 
+import com.huawei.utbot.cpp.UTBot
 import com.huawei.utbot.cpp.client.handlers.GenerateJsonHandler
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Job
@@ -9,10 +10,9 @@ import testsgen.TestsGenServiceGrpcKt
 
 class GenerateJsonFilesRequest(
     val project: Project,
-    val progressName: String,
     request: Testgen.ProjectConfigRequest,
 ): BaseRequest<Testgen.ProjectConfigRequest, Flow<Testgen.ProjectConfigResponse>>(request) {
-    override val description: String = "Sending request to check project configuration."
+    override val logMessage: String = "Sending request to check project configuration."
 
     override suspend fun TestsGenServiceGrpcKt.TestsGenServiceCoroutineStub.send(cancellationJob: Job?): Flow<Testgen.ProjectConfigResponse> {
         return this.configureProject(request)
@@ -23,7 +23,7 @@ class GenerateJsonFilesRequest(
             GenerateJsonHandler(
                 project,
                 this,
-                progressName,
+                UTBot.message("requests.json.description.progress"),
                 cancellationJob
             ).handle()
         }

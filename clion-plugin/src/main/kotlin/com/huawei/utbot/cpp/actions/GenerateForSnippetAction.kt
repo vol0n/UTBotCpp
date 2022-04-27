@@ -2,7 +2,7 @@ package com.huawei.utbot.cpp.actions
 
 import com.huawei.utbot.cpp.actions.utils.getSnippetRequestMessage
 import com.huawei.utbot.cpp.client.Requests.SnippetRequest
-import com.huawei.utbot.cpp.utils.client
+import com.huawei.utbot.cpp.utils.execute
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 
@@ -10,11 +10,8 @@ class GenerateForSnippetAction : GenerateTestsBaseAction() {
     override fun actionPerformed(e: AnActionEvent) {
         SnippetRequest(
             getSnippetRequestMessage(e),
-            e.project!!,
-            "Generate for snippet..."
-        ).apply {
-            e.client.execute(this)
-        }
+            e.project!!
+        ).execute(e)
     }
 
     override fun updateIfServerAvailable(e: AnActionEvent) {

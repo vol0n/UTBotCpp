@@ -15,8 +15,7 @@ class GenerateForProjectAction : GenerateTestsBaseAction() {
     override fun actionPerformed(e: AnActionEvent) {
         ProjectRequest(
             getProjectRequestMessage(e),
-            e.project!!,
-            "Generate for line..."
+            e.project!!
         ).apply {
             e.client.execute(this)
         }

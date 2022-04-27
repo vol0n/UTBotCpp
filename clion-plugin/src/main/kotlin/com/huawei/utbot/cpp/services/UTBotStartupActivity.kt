@@ -2,6 +2,7 @@ package com.huawei.utbot.cpp.services
 
 import com.huawei.utbot.cpp.client.Client
 import com.huawei.utbot.cpp.ui.wizard.UTBotWizard
+import com.huawei.utbot.cpp.utils.client
 import com.huawei.utbot.cpp.utils.invokeOnEdt
 import com.intellij.ide.util.RunOnceUtil
 import com.intellij.openapi.components.service
@@ -17,8 +18,10 @@ class UTBotStartupActivity: StartupActivity {
 
     private fun showWizardOnFirstProjectOpen(project: Project) {
         RunOnceUtil.runOnceForProject(project, "Show UTBot Wizard") {
-            invokeOnEdt {
-                UTBotWizard(project).showAndGet()
+            if (!Client.IS_TEST_MODE) {
+                invokeOnEdt {
+                    UTBotWizard(project).showAndGet()
+                }
             }
         }
     }

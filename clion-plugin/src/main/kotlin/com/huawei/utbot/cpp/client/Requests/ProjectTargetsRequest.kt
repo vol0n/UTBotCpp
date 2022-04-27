@@ -8,7 +8,7 @@ class ProjectTargetsRequest(
     request: Testgen.ProjectTargetsRequest,
     val processTargets: suspend (Testgen.ProjectTargetsResponse)->Unit
 ): BaseRequest<Testgen.ProjectTargetsRequest, Testgen.ProjectTargetsResponse>(request) {
-    override val description: String = "Sending request to get PROJECT TARGETS."
+    override val logMessage: String = "Sending request to get PROJECT TARGETS."
     override suspend fun Testgen.ProjectTargetsResponse.handle(cancellationJob: Job?) {
         processTargets(this)
     }

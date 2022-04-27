@@ -1,9 +1,8 @@
 package com.huawei.utbot.cpp.actions
 
-import com.huawei.utbot.cpp.actions.utils.getFunctionRequestMessage
 import com.huawei.utbot.cpp.actions.utils.getLineRequestMessage
 import com.huawei.utbot.cpp.client.Requests.LineRequest
-import com.huawei.utbot.cpp.utils.client
+import com.huawei.utbot.cpp.utils.execute
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 
@@ -18,10 +17,7 @@ class GenerateForLineAction : GenerateTestsBaseAction() {
     override fun actionPerformed(e: AnActionEvent) {
         LineRequest(
             getLineRequestMessage(e),
-            e.project!!,
-            "Generate for line..."
-        ).apply {
-            e.client.execute(this)
-        }
+            e.project!!
+        ).execute(e)
     }
 }

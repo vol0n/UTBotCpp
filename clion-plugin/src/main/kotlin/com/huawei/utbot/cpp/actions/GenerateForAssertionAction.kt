@@ -2,7 +2,7 @@ package com.huawei.utbot.cpp.actions
 
 import com.huawei.utbot.cpp.actions.utils.getAssertionRequestMessage
 import com.huawei.utbot.cpp.client.Requests.AssertionRequest
-import com.huawei.utbot.cpp.utils.client
+import com.huawei.utbot.cpp.utils.execute
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 
@@ -11,10 +11,7 @@ class GenerateForAssertionAction : GenerateTestsBaseAction() {
         AssertionRequest(
             getAssertionRequestMessage(e),
             e.project!!,
-            "Generate for assertion..."
-        ).apply {
-            e.client.execute(this)
-        }
+        ).execute(e)
     }
 
     override fun updateIfServerAvailable(e: AnActionEvent) {

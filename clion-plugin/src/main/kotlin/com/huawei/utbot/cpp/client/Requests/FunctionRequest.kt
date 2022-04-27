@@ -1,5 +1,6 @@
 package com.huawei.utbot.cpp.client.Requests
 
+import com.huawei.utbot.cpp.UTBot
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -9,9 +10,8 @@ import testsgen.TestsGenServiceGrpcKt
 class FunctionRequest(
     request: Testgen.FunctionRequest,
     project: Project,
-    progressName: String
-) : BaseTestsRequest<Testgen.FunctionRequest>(request, project, progressName) {
-    override val description: String = "Sending request to generate tests for CLASS."
+) : BaseTestsRequest<Testgen.FunctionRequest>(request, project, UTBot.message("requests.function.description.progress")) {
+    override val logMessage: String = "Sending request to generate tests for CLASS."
     override suspend fun TestsGenServiceGrpcKt.TestsGenServiceCoroutineStub.send(cancellationJob: Job?): Flow<Testgen.TestsResponse> =
         generateFunctionTests(request)
 }

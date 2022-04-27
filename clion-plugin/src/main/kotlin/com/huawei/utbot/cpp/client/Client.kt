@@ -2,6 +2,7 @@ package com.huawei.utbot.cpp.client
 
 import com.huawei.utbot.cpp.actions.utils.getDummyRequest
 import com.huawei.utbot.cpp.actions.utils.getProjectConfigRequestMessage
+import com.huawei.utbot.cpp.client.Requests.CheckProjectConfigurationRequest
 import com.huawei.utbot.cpp.client.logger.DynamicLevelLoggingProvider
 import com.huawei.utbot.cpp.messaging.ConnectionStatus
 import com.huawei.utbot.cpp.messaging.UTBotEventsListener
@@ -21,7 +22,6 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import testsgen.TestsGenServiceGrpcKt
 
 import com.huawei.utbot.cpp.services.UTBotSettings
@@ -54,7 +54,6 @@ class Client(val project: Project) : Disposable, KoinComponent {
     var connectionStatus = ConnectionStatus.INIT
         private set
     private val messageBus = project.messageBus
-    private val handler = ResponseHandler(project, this)
     private var newClient = true
     private val settings = project.service<UTBotSettings>()
     private val clientID = generateClientID()
@@ -106,7 +105,6 @@ class Client(val project: Project) : Disposable, KoinComponent {
         metadata.put(io.grpc.Metadata.Key.of("clientId", io.grpc.Metadata.ASCII_STRING_MARSHALLER), clientID)
         return io.grpc.stub.MetadataUtils.attachHeaders(stub, metadata)
     }
-
 
     private fun subscribeToEvents() {
         project.messageBus.connect(this)
@@ -228,113 +226,12 @@ class Client(val project: Project) : Disposable, KoinComponent {
 
     fun execute(request: Request) {
         shortLivingRequestsCS.launch {
-            request.execute(grpcStub, coroutineContext[Job])
+            try {
+                request.execute(grpcStub, coroutineContext[Job])
+            } catch (e: io.grpc.StatusException) {
+                handleGRPCStatusException(e, "Exception when executing server request")
+            }
         }
-    }
-
-    fun generateForFile(
-        request: Testgen.FileRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for FILE: \n$request")
-            handler.handleTestsStream(grpcStub.generateFileTests(request), "Generate For File")
-        }
-    }
-
-    fun generateForLine(
-        request: Testgen.LineRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for LINE: \n$request")
-            handler.handleTestsStream(grpcStub.generateLineTests(request), "Generate For Line")
-        }
-    }
-
-    fun generateForPredicate(
-        request: Testgen.PredicateRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for PREDICATE: \n$request")
-            handler.handleTestsStream(grpcStub.generatePredicateTests(request), "Generate For Predicate")
-        }
-    }
-
-    fun generateForFunction(
-        request: Testgen.FunctionRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for FUNCTION: \n$request")
-            handler.handleTestsStream(grpcStub.generateFunctionTests(request), "Generate For Function")
-        }
-    }
-
-    fun generateForClass(
-        request: Testgen.ClassRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for CLASS: \n$request")
-            handler.handleTestsStream(grpcStub.generateClassTests(request), "Generate For Folder")
-        }
-    }
-
-    fun generateForFolder(
-        request: Testgen.FolderRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for FOLDER: \n$request")
-            handler.handleTestsStream(grpcStub.generateFolderTests(request), "Generate For Folder")
-        }
-    }
-
-    fun generateForProject(
-        request: Testgen.ProjectRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for PROJECT: \n$request")
-            handler.handleTestsStream(grpcStub.generateProjectTests(request), "Generate for Project")
-        }
-    }
-
-    fun requestProjectTargetsAndProcess(
-        request: Testgen.ProjectTargetsRequest,
-        callback: (Testgen.ProjectTargetsResponse) -> Unit
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to get PROJECT TARGETS: \n$request")
-            val targets = grpcStub.getProjectTargets(request)
-            callback(targets)
-        }
-    }
-
-    fun generateForSnippet(
-        request: Testgen.SnippetRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for SNIPPET: \n$request")
-            handler.handleTestsStream(grpcStub.generateSnippetTests(request), "Generate For Snippet")
-        }
-    }
-
-    fun generateForAssertion(
-        request: Testgen.AssertionRequest
-    ) {
-        shortLivingRequestsCS.launch {
-            Logger.info("Sending request to generate for ASSERTION: \n$request")
-            handler.handleTestsStream(grpcStub.generateAssertionFailTests(request), "Generate For Assertion")
-        }
-    }
-
-    fun requestFunctionReturnTypeAndProcess(request: Testgen.FunctionRequest, callback: (Testgen.FunctionTypeResponse) -> Unit) {
-        shortLivingRequestsCS.launch {
-            callback(getFunctionReturnType(request))
-        }
-    }
-
-    private suspend fun getFunctionReturnType(
-        request: Testgen.FunctionRequest
-    ): Testgen.FunctionTypeResponse = withContext(Dispatchers.IO) {
-        Logger.info("Sending request to get FUNCTION RETURN TYPE: \n$request")
-        grpcStub.getFunctionReturnType(request)
     }
 
     suspend fun handShake(): Testgen.DummyResponse {
@@ -343,41 +240,11 @@ class Client(val project: Project) : Disposable, KoinComponent {
     }
 
     fun configureProject() {
-        val request = getProjectConfigRequestMessage(project, Testgen.ConfigMode.CHECK)
-        shortLivingRequestsCS.launch(CoroutineName("configureProject")) {
-            Logger.info("Sending request to CHECK PROJECT CONFIGURATION: \n$request")
-            handler.handleCheckConfigurationResponse(
-                grpcStub.configureProject(request),
-                "Checking project configuration..."
-            )
-        }
-    }
-
-    fun createBuildDir() {
-        val request = getProjectConfigRequestMessage(project, Testgen.ConfigMode.CREATE_BUILD_DIR)
-        shortLivingRequestsCS.launch(CoroutineName("createBuildDir")) {
-            Logger.info("Sending request to GENERATE BUILD DIR: \n$request")
-            handler.handleCreateBuildDirResponse(grpcStub.configureProject(request), "Create build directory...")
-        }
-    }
-
-    fun getCoverageAndResults(request: Testgen.CoverageAndResultsRequest) {
-        shortLivingRequestsCS.launch {
-            withContext(Dispatchers.Default) {
-                Logger.info("Sending request to get COVERAGE AND RESULTS: \n$request")
-                handler.handleCoverageAndResultsResponse(
-                    grpcStub.createTestsCoverageAndResult(request),
-                    "Run Tests with Coverage"
-                )
-            }
-        }
-    }
-
-    fun generateJSon() {
-        val request = getProjectConfigRequestMessage(project, Testgen.ConfigMode.GENERATE_JSON_FILES)
-        shortLivingRequestsCS.launch(CoroutineName("generateJSon")) {
-            Logger.info("Sending request to GENERATE JSON FILES: \n$request")
-            handler.handleGenerateJsonResponse(grpcStub.configureProject(request), "Generate JSON files...")
+        CheckProjectConfigurationRequest(
+            project,
+            getProjectConfigRequestMessage(project, Testgen.ConfigMode.CHECK)
+        ).apply {
+            execute(this)
         }
     }
 

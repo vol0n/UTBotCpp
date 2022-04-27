@@ -8,7 +8,7 @@ class FunctionReturnTypeRequest(
     request: Testgen.FunctionRequest,
     val processReturnType: suspend (Testgen.FunctionTypeResponse)->(Unit)
 ) : BaseRequest<Testgen.FunctionRequest, Testgen.FunctionTypeResponse>(request) {
-    override val description: String = "Sending request to generate tests for CLASS."
+    override val logMessage: String = "Sending request to generate tests for CLASS."
 
     override suspend fun Testgen.FunctionTypeResponse.handle(cancellationJob: Job?) {
         processReturnType(this)

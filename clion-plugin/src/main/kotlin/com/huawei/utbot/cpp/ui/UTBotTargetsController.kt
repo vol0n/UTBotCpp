@@ -2,16 +2,18 @@ package com.huawei.utbot.cpp.ui
 
 import com.huawei.utbot.cpp.actions.utils.getProjectTargetsRequest
 import com.huawei.utbot.cpp.client.Client
+import com.huawei.utbot.cpp.client.Requests.ProjectTargetsRequest
 import com.huawei.utbot.cpp.utils.relativize
 import com.huawei.utbot.cpp.messaging.UTBotSettingsChangedListener
 import com.huawei.utbot.cpp.services.UTBotSettings
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.CollectionListModel
 import com.huawei.utbot.cpp.messaging.ConnectionStatus
 import com.huawei.utbot.cpp.messaging.UTBotEventsListener
 import com.huawei.utbot.cpp.models.UTBotTarget
+import com.huawei.utbot.cpp.utils.client
+import com.huawei.utbot.cpp.utils.invokeOnEdt
 import org.tinylog.kotlin.Logger
 
 
@@ -35,8 +37,11 @@ class UTBotTargetsController(val project: Project) {
             return
         }
         Logger.trace("Requesting project targets from server!")
-        client.requestProjectTargetsAndProcess(getProjectTargetsRequest(project)) { targetsResponse ->
-            ApplicationManager.getApplication().invokeLater {
+        ProjectTargetsRequest(
+            getProjectTargetsRequest(project),
+        ) {
+            targetsResponse ->
+            invokeOnEdt {
                 listModel.apply {
                     val oldTargetList = toList()
                     oldTargetList.addAll(
@@ -46,6 +51,8 @@ class UTBotTargetsController(val project: Project) {
                     listModel.replaceAll(oldTargetList.distinct())
                 }
             }
+        }.let {
+            project.client.execute(it)
         }
     }
 
