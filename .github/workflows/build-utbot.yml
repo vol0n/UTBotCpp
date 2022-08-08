@@ -99,12 +99,11 @@ jobs:
         with:
           distribution: zulu
           java-version: 11
+      - name: Run CLion integration tests
         run: |
           java --version
           which java
-          echo JAVA_HOME
-      - name: Run CLion integration tests
-        run: |
+          echo $JAVA_HOME
           chmod +x docker/action-scripts/runClionIntegrationTests.sh 
           ./docker/action-scripts/runClionIntegrationTests.sh
       - name: Upload logs
