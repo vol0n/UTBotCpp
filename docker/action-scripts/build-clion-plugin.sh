@@ -3,4 +3,4 @@
 set -e
 
 cd clion-plugin
-./gradlew assemble
+./gradlew assemble --rerun-tasks
