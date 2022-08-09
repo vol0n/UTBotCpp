@@ -44,7 +44,7 @@ plugins {
     id("org.jetbrains.qodana") version "0.1.12"
     // serialization
     kotlin("plugin.serialization") version "1.6.10"
-    id("com.google.protobuf") version "0.8.15"
+    id("com.google.protobuf") version "0.8.19"
     // code style
     id("io.gitlab.arturbosch.detekt").version("1.21.0")
     idea
