@@ -101,6 +101,8 @@ jobs:
           java-version: 11
       - name: Run CLion integration tests
         run: |
+          echo running sudo su
+          sudo su
           echo version:
           java --version
           echo which java:
@@ -108,6 +110,7 @@ jobs:
           echo JAVA_HOME=$JAVA_HOME
           echo PATH=$PATH
           export PATH=$PATH:$(which java)
+          echo after adding to path: PATH=$PATH
           chmod +x docker/action-scripts/runClionIntegrationTests.sh 
           ./docker/action-scripts/runClionIntegrationTests.sh
       - name: Upload logs
