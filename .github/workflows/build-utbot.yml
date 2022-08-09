@@ -97,7 +97,7 @@ jobs:
       - name: Setup Java for building CLion plugin
         uses: actions/setup-java@v3
         with:
-          distribution: zulu
+          distribution: adopt
           java-version: 11
       - name: Run CLion integration tests
         run: |
