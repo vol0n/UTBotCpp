@@ -112,14 +112,14 @@ void Linker::linkForOneFile(const fs::path &sourceFilePath) {
         auto result = linkForTarget(target, sourceFilePath, compilationUnitInfo, objectFile);
         if (result.isSuccess()) {
             auto [targetBitcode, stubsSet, _] = result.getOpt().value();
-            addToGenerated({ objectFile }, targetBitcode);
+            addToGenerated({ objectFile }, targetBitcode, target);
             auto&& targetUnitInfo = testGen.buildDatabase->getClientLinkUnitInfo(target);
             testGen.buildDatabase->assignStubFilesToLinkUnit(targetUnitInfo, stubsSet);
             return;
         } else {
             LOG_S(DEBUG) << "Linkage for target " << target.filename() << " failed: " << result.getError()->c_str();
             if (i + 1 == targets.size()) {
-                addToGenerated({ objectFile }, {});
+                addToGenerated({ objectFile }, {}, {});
                 fs::path possibleBitcodeFileName =
                     testGen.buildDatabase->getBitcodeFile(testGen.getTargetPath());
                 brokenLinkFiles.insert(possibleBitcodeFileName);
@@ -199,7 +199,7 @@ void Linker::linkForProject() {
                                                 sourceFile);
                                         return compilationUnitInfo->getOutputFile();
                                     });
-                            addToGenerated(objectFiles, linkres.bitcodeOutput);
+                            addToGenerated(objectFiles, linkres.bitcodeOutput, target);
                             auto &&targetUnitInfo = testGen.buildDatabase->getClientLinkUnitInfo(target);
                             testGen.buildDatabase->assignStubFilesToLinkUnit(targetUnitInfo, linkres.stubsSet);
                             break;
@@ -217,7 +217,7 @@ void Linker::linkForProject() {
         });
 }
 
-void Linker::addToGenerated(const CollectionUtils::FileSet &objectFiles, const fs::path &output) {
+void Linker::addToGenerated(const CollectionUtils::FileSet &objectFiles, const fs::path &output, const fs::path &target) {
     for (const auto &objectFile : objectFiles) {
         auto objectInfo = testGen.buildDatabase->getClientCompilationUnitInfo(objectFile);
         const fs::path &sourcePath = objectInfo->getSourcePath();
@@ -331,6 +331,7 @@ Result<Linker::LinkResult> Linker::link(const CollectionUtils::MapFileTo<fs::pat
                                         const std::optional<fs::path> &testedFilePath,
                                         const CollectionUtils::FileSet &stubSources,
                                         bool errorOnMissingBitcode) {
+    // print all bitcode files to link
     LOG_SCOPE_FUNCTION(DEBUG);
     std::stringstream logStream;
     logStream << "Linking files";
@@ -340,6 +341,8 @@ Result<Linker::LinkResult> Linker::link(const CollectionUtils::MapFileTo<fs::pat
             logStream << bitcodeFile << "\n";
         }
     }
+
+    // check that all bitcode files exist at the moment
     LOG_S(DEBUG) << logStream.str();
     for (const auto &[objectFile, bitcodeFile] : bitcodeFiles) {
         if (!fs::exists(bitcodeFile)) {
@@ -357,6 +360,8 @@ Result<Linker::LinkResult> Linker::link(const CollectionUtils::MapFileTo<fs::pat
     printer::DefaultMakefilePrinter bitcodeLinkMakefilePrinter;
     printer::TestMakefilesPrinter testMakefilesPrinter{ testGen, &stubSources };
     bitcodeLinkMakefilePrinter.declareInclude(stubsMakefile);
+    // related to linking or making mk file for bitcode files
+    // targetBitcode = path to linked bc file
     auto[targetBitcode, _] = addLinkTargetRecursively(target, bitcodeLinkMakefilePrinter, stubSources, bitcodeFiles,
                                                       suffixForParentOfStubs, false, testedFilePath, true);
 
@@ -374,6 +379,9 @@ Result<Linker::LinkResult> Linker::link(const CollectionUtils::MapFileTo<fs::pat
         return errorMessage;
     }
     CollectionUtils::FileSet stubsSet, presentedFiles;
+
+    // what above is not interesting -> Start here
+
     if (Paths::isLibraryFile(target)) {
         auto stubsSetResult = generateStubsMakefile(target, targetBitcode, stubsMakefile);
         if (!stubsSetResult.isSuccess()) {
@@ -549,6 +557,7 @@ getArchiveCommands(fs::path const &workingDir,
             bool hasArchiveOption = false;
             auto arguments = CollectionUtils::transformTo<std::vector<std::string>>(
                 linkCommand.getCommandLine(), [&](std::string const &argument) -> std::string {
+                    // removes arguments starting with `-` except ' '
                     return getArchiveArgument(argument, workingDir, dependencies, linkUnitInfo,
                                               output, linkCommand, hasArchiveOption);
                 });
@@ -731,6 +740,22 @@ Linker::declareRootLibraryTarget(printer::DefaultMakefilePrinter &bitcodeLinkMak
 }
 
 
+/**
+ *
+ * @param fileToBuild .o or target file path
+ * @param bitcodeLinkMakefilePrinter - printer to create makefile which links all files
+ * @param stubSources - filepaths to stubsources
+ * @param bitcodeFiles - map from .o to corresponding .bc file
+ * @param suffixForParentOfStubs
+ * @param hasParent
+ * @param testedFilePath
+ * @param shouldChangeDirectory
+ * @return bitcode file corresponding to passed `fileToBuild`
+ *
+ * if fileToBuild is .o file then return corresponding bitcode file and whether it is stub or not
+ * if fileToBuild is a target (lib or executable) then take all files subfiles for this target and pass
+ * them recursively instead of 'fileToBuild'
+ */
 BuildResult
 Linker::addLinkTargetRecursively(const fs::path &fileToBuild,
                                  printer::DefaultMakefilePrinter &bitcodeLinkMakefilePrinter,
@@ -770,6 +795,7 @@ Linker::addLinkTargetRecursively(const fs::path &fileToBuild,
         }
         auto bitcodeDependencies = CollectionUtils::getValues(dependencies);
         fs::path prefixPath = getPrefixPath(bitcodeDependencies, testGen.serverBuildDir);
+        // create fp for fileToBuild, if it is a target replace extension for .bc
         auto output = testGen.buildDatabase->getBitcodeFile(fileToBuild);
         output = LinkerUtils::applySuffix(output, unitType, suffixForParentOfStubs);
         if (Paths::isLibraryFile(fileToBuild)) {

@@ -24,11 +24,14 @@ CollectionUtils::FileSet StubGen::getStubSources(const fs::path &target) {
 
 CollectionUtils::FileSet
 StubGen::findStubFilesBySignatures(const std::vector<tests::Tests::MethodDescription> &signatures) {
+    // compile commands json
     fs::path ccJsonDirPath =
             Paths::getUtbotBuildDir(testGen.projectContext) / "stubs_build_files";
     auto stubFiles =
-        Paths::findFilesInFolder(Paths::getStubsDirPath(testGen.projectContext));
-    stubFiles = Synchronizer::dropHeaders(stubFiles);
+        Paths::findFilesInFolder(Paths::getStubsDirPath(testGen.projectContext)); // tests/stub
+
+    stubFiles = Synchronizer::dropHeaders(stubFiles); // filter out header files
+    // remove sources that are in current target
     CollectionUtils::erase_if(stubFiles, [this](fs::path const &stubPath) {
         fs::path sourcePath = Paths::stubPathToSourcePath(testGen.projectContext, stubPath);
         return CollectionUtils::contains(testGen.targetSources, sourcePath);

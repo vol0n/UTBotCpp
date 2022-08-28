@@ -210,7 +210,7 @@ Status Server::TestsGenServiceImpl::ProcessBaseTestRequest(BaseTestGen &testGen,
         StubGen stubGen(testGen);
 
         Synchronizer synchronizer(&testGen, &stubGen, &sizeContext);
-        synchronizer.synchronize(typesHandler);
+        synchronizer.synchronize(typesHandler, testsWriter);
 
         std::shared_ptr<LineInfo> lineInfo = nullptr;
         auto lineTestGen = dynamic_cast<LineTestGen *>(&testGen);

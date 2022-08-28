@@ -20,6 +20,14 @@ public:
                                         std::function<void(tests::Tests &)> &&prepareTests,
                                         std::function<void()> &&prepareTotal) = 0;
 
+    virtual void writeFile(const std::string& content, const std::string& filePath) const {
+        testsgen::TestsResponse response;
+        auto testSource = response.add_testsources();
+        testSource->set_code(content);
+        testSource->set_filepath(filePath);
+        writeMessage(response);
+    }
+
     virtual void writeReport(const std::string &content,
                              const std::string &message,
                              const fs::path &pathToStore) const;

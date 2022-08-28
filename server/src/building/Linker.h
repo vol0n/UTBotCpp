@@ -54,6 +54,7 @@ private:
 
     CollectionUtils::FileSet testedFiles;
     CollectionUtils::MapFileTo<fs::path> bitcodeFileName;
+    CollectionUtils::MapFileTo<fs::path> targetPath;
     CollectionUtils::FileSet brokenLinkFiles;
 
     IRParser irParser;
@@ -79,7 +80,7 @@ private:
                                     bool errorOnMissingBitcode = true);
 
     void checkSiblingsExist(const CollectionUtils::FileSet &archivedFiles) const;
-    void addToGenerated(const CollectionUtils::FileSet &objectFiles, const fs::path &output);
+    void addToGenerated(const CollectionUtils::FileSet &objectFiles, const fs::path &output, const fs::path &target);
     fs::path getPrefixPath(const std::vector<fs::path> &dependencies, fs::path defaultPath) const;
 
     Result<CollectionUtils::FileSet> generateStubsMakefile(const fs::path &root,

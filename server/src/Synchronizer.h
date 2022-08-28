@@ -32,7 +32,7 @@ class Synchronizer {
 
     void synchronizeStubs(std::unordered_set<StubOperator, HashUtils::StubHash> &outdatedStubs,
                           const types::TypesHandler &typesHandler);
-    void synchronizeWrappers(const CollectionUtils::FileSet &outdatedSourcePaths) const;
+    void synchronizeWrappers(const CollectionUtils::FileSet &outdatedSourcePaths, const TestsWriter* testsWriter = nullptr) const;
 
     std::shared_ptr<CompilationDatabase>
     createStubsCompilationDatabase(
@@ -51,7 +51,7 @@ public:
 
     Synchronizer(BaseTestGen *testGen, StubGen const *stubGen, types::TypesHandler::SizeContext *sizeContext);
 
-    void synchronize(const types::TypesHandler &typesHandler);
+    void synchronize(const types::TypesHandler &typesHandler, const TestsWriter* testsWriter = nullptr);
 
     const CollectionUtils::FileSet &getAllFiles() const;
 };

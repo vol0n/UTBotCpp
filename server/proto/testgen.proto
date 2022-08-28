@@ -150,6 +150,10 @@ message StubsResponse {
     Progress progress = 2;
 }
 
+message LinkInfo {
+
+}
+
 message TestsResponse {
     repeated SourceCode testSources = 1;
     StubsResponse stubs = 2;
