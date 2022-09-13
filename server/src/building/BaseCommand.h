@@ -102,6 +102,10 @@ namespace utbot {
         [[nodiscard]] fs::path getBuildTool() const;
 
         void setBuildTool(fs::path buildTool);
+
+        virtual void removeBuildTool();
+        virtual void removeOutput();
+        virtual void removeCompileOption();
     };
 }
 

@@ -116,7 +116,7 @@ CollectionUtils::FileSet Synchronizer::dropHeaders(const CollectionUtils::FileSe
     });
 }
 
-void Synchronizer::synchronize(const types::TypesHandler &typesHandler) {
+void Synchronizer::synchronize(const types::TypesHandler &typesHandler, const TestsWriter* testsWriter) {
     if (TypeUtils::isSameType<SnippetTestGen>(*this->testGen)) {
         return;
     }
@@ -125,7 +125,7 @@ void Synchronizer::synchronize(const types::TypesHandler &typesHandler) {
         synchronizeStubs(outdatedStubs, typesHandler);
     }
     auto outdatedSourcePaths = getOutdatedSourcePaths();
-    synchronizeWrappers(outdatedSourcePaths);
+    synchronizeWrappers(outdatedSourcePaths, testsWriter);
 }
 
 void Synchronizer::synchronizeStubs(StubSet &outdatedStubs,
@@ -195,7 +195,7 @@ Synchronizer::createStubsCompilationDatabase(StubSet &stubFiles,
     return CompilationUtils::getCompilationDatabase(ccJsonStubDirPath);
 }
 
-void Synchronizer::synchronizeWrappers(const CollectionUtils::FileSet &outdatedSourcePaths) const {
+void Synchronizer::synchronizeWrappers(const CollectionUtils::FileSet &outdatedSourcePaths, const TestsWriter* testsWriter) const {
     auto sourceFilesNeedToRegenerateWrappers = outdatedSourcePaths;
     for (fs::path const &sourceFilePath : getSourceFiles()) {
         if (!CollectionUtils::contains(sourceFilesNeedToRegenerateWrappers, sourceFilePath)) {
@@ -213,6 +213,7 @@ void Synchronizer::synchronizeWrappers(const CollectionUtils::FileSet &outdatedS
                                                           testGen->getProjectBuildDatabase()->compilationDatabase, nullptr,
                                                           testGen->serverBuildDir);
             std::string wrapper = sourceToHeaderRewriter.generateWrapper(sourceFilePath);
+            // testsWriter->writeFile(wrapper, Paths::getWrapperFilePath(testGen->projectContext, sourceFilePath));
             printer::SourceWrapperPrinter(Paths::getSourceLanguage(sourceFilePath)).print(testGen->projectContext, sourceFilePath, wrapper);
         });
 }

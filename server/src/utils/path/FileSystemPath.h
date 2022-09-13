@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <vector>
+#include <loguru.h>
 
 namespace fs {
 
@@ -13,11 +14,16 @@ namespace fs {
 
     class path {
     public:
-        path(const std::filesystem::path &p) : path_(normalizedTrimmed(p)) {}
-
-        path() {}
+        path(const std::filesystem::path &p, bool normalize = true) {
+            if (normalize)
+                path_ = normalizedTrimmed(p);
+            else
+                path_ = p;
+        }
 
         path(const std::string &s) : path_(normalizedTrimmed(s)) {}
+
+        path() {}
 
         path(const char *s) : path_(normalizedTrimmed(s)) {}
 
@@ -69,6 +75,10 @@ namespace fs {
             return *this;
         }
 
+        std::filesystem::path to_std() {
+            return path_;
+        }
+
         path &replace_extension( const path& replacement ) {
             path_.replace_extension(replacement.path_);
             return *this;
@@ -84,6 +94,10 @@ namespace fs {
 
         bool empty() const noexcept {
             return path_.empty();
+        }
+
+        inline path resolve(const path& other, bool normalize = true) {
+            return path(this->path_ / other.path_, normalize);
         }
 
         class iterator {
@@ -152,7 +166,9 @@ namespace fs {
         friend bool exists( const path& p );
         friend bool is_empty( const path& p );
         friend bool is_directory( const path& p );
-        friend path relative( const path& p, const path& base);
+
+        friend path relative( const path& p, const path& base, bool normalize);
+
         friend path canonical( const path& p );
         friend path weakly_canonical( const path& p );
         friend path absolute(const path& p);
@@ -258,8 +274,8 @@ namespace fs {
         return is_directory(p.path_);
     }
 
-    inline path relative( const path& p, const path& base) {
-        return path(relative(p.path_, base.path_));
+    inline path relative( const path& p, const path& base, bool normalize = true) {
+        return path(relative(p.path_, base.path_), normalize);
     }
 
     inline bool create_directories( const path& p ) {

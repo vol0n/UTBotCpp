@@ -151,6 +151,24 @@ namespace utbot {
         *(commandLine.begin()) = std::move(buildTool);
     }
 
+    void BaseCommand::removeBuildTool() {
+        commandLine.erase(commandLine.begin());
+    }
+
+    void BaseCommand::removeOutput() {
+        auto it = std::find(commandLine.begin(), commandLine.end(), "-o");
+        if (it != commandLine.end()) {
+            commandLine.erase(it, std::next(it, 2));
+        }
+    }
+
+    void BaseCommand::removeCompileOption() {
+        auto it = std::find(commandLine.begin(), commandLine.end(), "-c");
+        if (it != commandLine.end()) {
+            commandLine.erase(it, std::next(it, 2));
+        }
+    }
+
     fs::path BaseCommand::getOutput() const {
         return *output;
     }

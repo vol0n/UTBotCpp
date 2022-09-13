@@ -9,7 +9,7 @@
 #include "utils/LogUtils.h"
 #include "utils/MakefileUtils.h"
 #include "utils/StringUtils.h"
-
+#include <fstream>
 #include "loguru.h"
 
 Status UserProjectConfiguration::CheckProjectConfiguration(const fs::path &buildDirPath,
@@ -70,6 +70,8 @@ UserProjectConfiguration::RunProjectConfigurationCommands(const fs::path &buildD
         fs::path cmakeListsPath = getCmakeListsPath(buildDirPath);
         if (fs::exists(cmakeListsPath)) {
             LOG_S(INFO) << "Configure cmake project";
+            prepareCMakeListsFile(cmakeListsPath);
+            LOG_S(INFO) << "Prepared cmake file";
             RunProjectConfigurationCommand(buildDirPath, cmakeParams, projectContext, writer);
         } else {
             LOG_S(INFO) << "CMakeLists.txt not found in root project directory: " << cmakeListsPath
@@ -84,6 +86,18 @@ UserProjectConfiguration::RunProjectConfigurationCommands(const fs::path &buildD
         writer.writeResponse(ProjectConfigStatus::RUN_JSON_GENERATION_FAILED, e.what());
     }
     return Status::OK;
+}
+
+void UserProjectConfiguration::prepareCMakeListsFile(const fs::path &path) {
+    std::ifstream ifs(path);
+    std::stringstream ss;
+    for(std::string line; std::getline(ifs, line); ) {
+        if (StringUtils::contains(line, "utbot_section")) {
+            break;
+        }
+        ss << line << "\n";
+    }
+    FileSystemUtils::writeToFile(path, ss.str());
 }
 
 void UserProjectConfiguration::RunProjectConfigurationCommand(const fs::path &buildDirPath,

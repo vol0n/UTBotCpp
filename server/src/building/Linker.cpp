@@ -11,6 +11,7 @@
 #include "exceptions/NoTestGeneratedException.h"
 #include "printers/DefaultMakefilePrinter.h"
 #include "printers/NativeMakefilePrinter.h"
+#include "printers/CMakeListsPrinter.h"
 #include "stubs/StubGen.h"
 #include "testgens/FileTestGen.h"
 #include "testgens/FolderTestGen.h"
@@ -104,13 +105,17 @@ void Linker::linkForOneFile(const fs::path &sourceFilePath) {
         auto result = linkForTarget(target, sourceFilePath, compilationUnitInfo, objectFile);
         if (result.isSuccess()) {
             auto [targetBitcode, stubsSet, _] = result.getOpt().value();
-            addToGenerated({ objectFile }, targetBitcode);
+            addToGenerated({ objectFile }, targetBitcode, target);
+            auto cmakePrinter = printer::CMakeListsPrinter(&testGen, testGen.getTargetBuildDatabase()->compilationDatabase->getBuildCompilerPath());
+            CollectionUtils::FileSet presented;
+            presented.insert(sourceFilePath);
+            cmakePrinter.generate(target, stubsSet, presented);
             auto&& targetUnitInfo = testGen.getTargetBuildDatabase()->getClientLinkUnitInfo(target);
             return;
         } else {
             LOG_S(DEBUG) << "Linkage for target " << target.filename() << " failed: " << result.getError()->c_str();
             if (i + 1 == targets.size()) {
-                addToGenerated({ objectFile }, {});
+                addToGenerated({ objectFile }, {}, target);
                 fs::path possibleBitcodeFileName =
                     testGen.getTargetBuildDatabase()->getBitcodeFile(testGen.getTargetBuildDatabase()->getTargetPath());
                 brokenLinkFiles.insert(possibleBitcodeFileName);
@@ -191,7 +196,9 @@ void Linker::linkForProject() {
                                                 sourceFile);
                                         return compilationUnitInfo->getOutputFile();
                                     });
-                            addToGenerated(objectFiles, linkres.bitcodeOutput);
+                            addToGenerated(objectFiles, linkres.bitcodeOutput, target);
+                            auto cmakePrinter = printer::CMakeListsPrinter(&testGen, testGen.getTargetBuildDatabase()->compilationDatabase->getBuildCompilerPath());
+                            cmakePrinter.generate(target, linkres.stubsSet, linkres.presentedFiles);
                             break;
                         } else {
                             std::stringstream ss;
@@ -207,7 +214,7 @@ void Linker::linkForProject() {
         });
 }
 
-void Linker::addToGenerated(const CollectionUtils::FileSet &objectFiles, const fs::path &output) {
+void Linker::addToGenerated(const CollectionUtils::FileSet &objectFiles, const fs::path &output, const fs::path &target) {
     for (const auto &objectFile : objectFiles) {
         auto objectInfo = testGen.getClientCompilationUnitInfo(objectFile);
         const fs::path &sourcePath = objectInfo->getSourcePath();
@@ -215,6 +222,7 @@ void Linker::addToGenerated(const CollectionUtils::FileSet &objectFiles, const f
             !CollectionUtils::contains(testedFiles, sourcePath)) {
             testedFiles.insert(sourcePath);
             bitcodeFileName[sourcePath] = output;
+            targetPath[sourcePath] = target;
         }
     }
 }
