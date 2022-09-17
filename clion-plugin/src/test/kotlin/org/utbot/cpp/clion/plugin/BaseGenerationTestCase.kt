@@ -55,9 +55,6 @@ abstract class BaseGenerationTestCase {
     val fixture: CodeInsightTestFixture = createFixture()
     val project: Project
         get() = fixture.project
-    val client: Client
-        get() = project.getCurrentClient()
-    val targetsController = UTBotTargetsController(project)
 
     init {
         project.settings.storedSettings.buildDirRelativePath = buildDirName
@@ -67,6 +64,11 @@ abstract class BaseGenerationTestCase {
             it.add(SystemWriter())
         }
     }
+
+    val client: Client
+        get() = project.getCurrentClient()
+    val targetsController = UTBotTargetsController(project)
+
 
     protected fun setupLogger(): Logger {
         Logger.setFactory(TestLoggerFactory::class.java)
@@ -102,6 +104,7 @@ abstract class BaseGenerationTestCase {
         // requests to server are asynchronous, need to wait for server to respond
         client.waitForServerRequestsToFinish(ifNotFinished = { unfinishedCoroutines: List<Job> ->
             // some requests may be executed only on EDT, so we wk
+            assert ( client.isServerAvailable() ) { "Server not available in wait" }
             PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
             logger.info("Waiting for requests to finish: $unfinishedCoroutines")
         })
