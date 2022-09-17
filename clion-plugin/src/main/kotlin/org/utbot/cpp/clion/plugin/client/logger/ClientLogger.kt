@@ -13,6 +13,7 @@ class ClientLogger(project: Project) {
 
     val logWriters: MutableList<LogWriter> = mutableListOf(ConsoleWriter(project))
 
+    fun info(message: String) = log({ message }, LogLevel.INFO)
     fun info(message: () -> String) = log(message, LogLevel.INFO)
 
     fun warn(message: () -> String) = log(message, LogLevel.WARN)

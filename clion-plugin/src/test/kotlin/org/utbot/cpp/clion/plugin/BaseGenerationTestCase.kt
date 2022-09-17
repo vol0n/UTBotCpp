@@ -24,6 +24,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.name
 import kotlinx.coroutines.Job
+import org.utbot.cpp.clion.plugin.client.logger.ClientLogger
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SwingEdtInterceptor::class)
@@ -51,10 +52,10 @@ abstract class BaseGenerationTestCase {
         Paths.get(File(".").canonicalPath).resolve("../integration-tests/c-example-mini").normalize()
     val testsDirectoryPath: Path = projectPath.resolve("cl-plugin-test-tests")
     val buildDirName = "build"
-    private val logger = setupLogger()
     val fixture: CodeInsightTestFixture = createFixture()
     val project: Project
         get() = fixture.project
+    private val logger = setupLogger()
 
     init {
         project.settings.storedSettings.buildDirRelativePath = buildDirName
@@ -70,13 +71,13 @@ abstract class BaseGenerationTestCase {
     val targetsController = UTBotTargetsController(project)
 
 
-    protected fun setupLogger(): Logger {
+    protected fun setupLogger(): ClientLogger {
         Logger.setFactory(TestLoggerFactory::class.java)
-        return Logger.getInstance(this.javaClass)
+        return project.logger
     }
 
     private fun createFixture(): CodeInsightTestFixture {
-        logger.info("Creating fixture")
+        println("Creating fixture")
         val fixture = IdeaTestFixtureFactory.getFixtureFactory().let {
             it.createCodeInsightFixture(
                 it.createFixtureBuilder(projectPath.name, projectPath, false).fixture,
@@ -85,7 +86,7 @@ abstract class BaseGenerationTestCase {
         }
         fixture.setUp()
         fixture.testDataPath = projectPath.toString()
-        logger.info("Finished creating fixture")
+        println("Finished creating fixture")
         return fixture
     }
 

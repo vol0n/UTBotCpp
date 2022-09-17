@@ -9,6 +9,7 @@ import org.utbot.cpp.clion.plugin.client.ClientManager
 import org.utbot.cpp.clion.plugin.settings.settings
 import org.utbot.cpp.clion.plugin.ui.wizard.UTBotWizard
 import org.utbot.cpp.clion.plugin.utils.invokeOnEdt
+import org.utbot.cpp.clion.plugin.utils.logger
 
 class UTBotStartupActivity : StartupActivity {
     override fun runActivity(project: Project) {
@@ -22,7 +23,10 @@ class UTBotStartupActivity : StartupActivity {
     // Here we address the service ClientManager for the first time so that it
     // will be initialized by the ide and Client will be created.
     // Client in turn will create a grpc channel and start heart-beating the server.
-    private fun initializeClient(project: Project) = project.service<ClientManager>()
+    private fun initializeClient(project: Project) {
+        project.logger.info { "Starting the client class" }
+        project.service<ClientManager>()
+    }
 
 
     private fun showWizardOnFirstOpen(project: Project) {

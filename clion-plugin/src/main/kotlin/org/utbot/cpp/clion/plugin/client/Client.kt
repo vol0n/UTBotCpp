@@ -1,6 +1,7 @@
 package org.utbot.cpp.clion.plugin.client
 
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import io.grpc.Status
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -193,7 +194,7 @@ class Client(
     fun waitForServerRequestsToFinish(timeout: Long = SERVER_TIMEOUT,
                                       delayTime: Long = 1000L,
                                       ifNotFinished: (List<Job>) -> Unit = {}) {
-        runBlocking {
+        runBlocking(Dispatchers.EDT) {
             withTimeout(timeout) {
                 while (requestsCS.coroutineContext.job.children.toList().any()) {
                     ifNotFinished(requestsCS.coroutineContext.job.children.toList())
@@ -205,6 +206,6 @@ class Client(
 
     companion object {
         const val HEARTBEAT_INTERVAL: Long = 500L
-        const val SERVER_TIMEOUT: Long = 300000L
+        const val SERVER_TIMEOUT: Long = 10000L
     }
 }
