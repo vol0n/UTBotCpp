@@ -8,7 +8,6 @@ import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
 import com.intellij.util.io.delete
-import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.TestInstance
@@ -101,11 +100,9 @@ abstract class BaseGenerationTestCase {
     /**
      * Waits until all requests initiated during tests are finished
      */
-    fun waitForRequestsToFinish() = runBlocking {
+    fun waitForRequestsToFinish() {
         // requests to server are asynchronous, need to wait for server to respond
         client.waitForServerRequestsToFinish(ifNotFinished = { unfinishedCoroutines: List<Job> ->
-            // some requests may be executed only on EDT, so we wk
-            assert ( client.isServerAvailable() ) { "Server not available in wait" }
             PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
             logger.info("Waiting for requests to finish: $unfinishedCoroutines")
         })

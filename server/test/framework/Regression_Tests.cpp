@@ -197,21 +197,6 @@ namespace {
             "ret");
     }
 
-    TEST_F(Regression_Test, Unnamed_Bit_Field) {
-        fs::path source = getTestFilePath("PR124.c");
-        auto [testGen, status] = createTestForFunction(source, 8);
-
-        ASSERT_TRUE(status.ok()) << status.error_message();
-
-        checkTestCasePredicates(
-            testGen.tests.at(source).methods.begin().value().testCases,
-            std::vector<TestCasePredicate>(
-                { [](const tests::Tests::MethodTestCase &testCase) {
-                    return !testCase.isError();
-                } }),
-            "bpf_xdp_attach");
-    }
-
     TEST_F(Regression_Test, VaList_In_Function_Pointer_Type) {
         fs::path source = getTestFilePath("PR123.c");
         auto [testGen, status] = createTestForFunction(source, 7);
@@ -338,6 +323,34 @@ namespace {
                             return testCase.returnValue.view->getEntryValue(nullptr) == "'4'";
                         } }),
                 "f4");
+    }
+
+    static bool checkAlignmentInNode(const tests::Tests::TestCaseParamValue &param) {
+        static const size_t HEX = 16;
+        static const size_t NODE_ALIGNMENT = 8;
+
+        const auto stringPointer = param.view->getSubViews().at(1)->getEntryValue(nullptr);
+        const size_t address = strtoull(stringPointer.c_str(), nullptr, HEX);
+        bool result = (address % NODE_ALIGNMENT == 0);
+
+        for (const auto &innerLazyValueParam : param.lazyValues) {
+            result &= checkAlignmentInNode(innerLazyValueParam);
+        }
+        return result;
+    }
+
+    TEST_F(Regression_Test, Pointers_Alignment) {
+        fs::path source = getTestFilePath("issue-195.c");
+        auto [testGen, status] = createTestForFunction(source, 8);
+
+        ASSERT_TRUE(status.ok()) << status.error_message();
+
+        for (const tests::Tests::MethodTestCase &testCase :
+             testGen.tests.at(source).methods.begin().value().testCases) {
+            for (const auto &paramValue : testCase.paramValues) {
+                EXPECT_TRUE(checkAlignmentInNode(paramValue));
+            }
+        }
     }
 
     TEST_F(Regression_Test, Generate_Folder) {
