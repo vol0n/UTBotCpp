@@ -655,11 +655,22 @@ Status Server::TestsGenServiceImpl::GetProjectTargets(ServerContext *context,
     try {
         utbot::ProjectContext projectContext{request->projectcontext()};
         auto buildDatabase = std::make_shared<ProjectBuildDatabase>(projectContext);
+        LOG_S(INFO) << "created ProjectBuildDatabase";
         std::vector<fs::path> targets = buildDatabase->getAllTargetPaths();
+        LOG_S(INFO) << "got all targets: " << StringUtils::joinWith(targets, " ");
         ProjectTargetsWriter targetsWriter(response);
+        LOG_S(INFO) << "created targetsWriter";
         targetsWriter.writeResponse(projectContext, targets);
+        LOG_S(INFO) << "after writing response!";
     } catch (CompilationDatabaseException const &e) {
         return failedToLoadCDbStatus(e);
+    } catch (BaseException const &e) {
+        LOG_S(INFO) << e.what() << NL;
+        return Status(StatusCode::INTERNAL, e.what());
+    } catch (...) {
+        std::exception_ptr p = std::current_exception();
+        LOG_S(INFO) <<(p ? p.__cxa_exception_type()->name() : "null") << NL;
+        return Status(StatusCode::INTERNAL, "");
     }
     return Status::OK;
 }
