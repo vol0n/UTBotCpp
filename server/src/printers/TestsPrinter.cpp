@@ -18,22 +18,34 @@ using printer::TestsPrinter;
 TestsPrinter::TestsPrinter(const types::TypesHandler *typesHandler, utbot::Language srcLanguage) : Printer(srcLanguage) , typesHandler(typesHandler) {
 }
 
+bool TestsPrinter::paramNeedsMathHeader(const Tests::TestCaseParamValue &paramValue) {
+    if (paramValue.view->containsFPSpecialValue()) {
+        return true;
+    }
+    for (const auto &lazyParamValue : paramValue.lazyValues) {
+        if (paramNeedsMathHeader(lazyParamValue)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 //we need this header for tests with generated NAN and INFINITY parameters to be compilable
 bool TestsPrinter::needsMathHeader(const Tests &tests) {
     for (const auto &[methodName, methodDescription] : tests.methods) {
         for (const auto &methodTestCase : methodDescription.testCases) {
             for (const auto &paramValue : methodTestCase.paramValues) {
-                if (paramValue.view->containsFPSpecialValue()) {
+                if (paramNeedsMathHeader(paramValue)) {
                     return true;
                 }
             }
             for (const auto &paramValue : methodTestCase.globalPreValues) {
-                    if (paramValue.view->containsFPSpecialValue()) {
+                if (paramNeedsMathHeader(paramValue)) {
                     return true;
                 }
             }
             for (const auto &paramValue : methodTestCase.globalPostValues) {
-                    if (paramValue.view->containsFPSpecialValue()) {
+                if (paramNeedsMathHeader(paramValue)) {
                     return true;
                 }
             }
@@ -47,8 +59,6 @@ void TestsPrinter::joinToFinalCode(Tests &tests, const fs::path& generatedHeader
     writeCopyrightHeader();
     genHeaders(tests, generatedHeaderPath);
     ss << "namespace " << PrinterUtils::TEST_NAMESPACE << " {\n";
-
-    strDeclareAbsError(PrinterUtils::ABS_ERROR);
 
     for (const auto &commentBlock : tests.commentBlocks) {
         strComment(commentBlock) << NL;
@@ -211,17 +221,13 @@ void TestsPrinter::genVerboseTestCase(const Tests::MethodDescription &methodDesc
                                       const Tests::MethodTestCase &testCase,
                                       const std::optional<LineInfo::PredicateInfo> &predicateInfo) {
     TestsPrinter::verboseParameters(methodDescription, testCase);
-    ss << NL;
 
     printLazyVariables(methodDescription, testCase, true);
-    ss << NL;
 
     printLazyReferences(methodDescription, testCase, true);
-    ss << NL;
 
     if (!testCase.isError()) {
         TestsPrinter::verboseOutputVariable(methodDescription, testCase);
-        ss << NL;
     }
     TestsPrinter::verboseFunctionCall(methodDescription, testCase);
     markTestedFunctionCallIfNeed(methodDescription.name, testCase);
@@ -248,6 +254,7 @@ void TestsPrinter::printLazyVariables(const Tests::MethodDescription &methodDesc
         for (const auto &paramValue : testCase.paramValues) {
             printLazyVariables(paramValue.lazyParams, paramValue.lazyValues);
         }
+        ss << NL;
     }
 }
 
@@ -270,6 +277,7 @@ void TestsPrinter::printLazyReferences(const Tests::MethodDescription &methodDes
         for (const auto &lazy : testCase.lazyReferences) {
             strAssignVar(lazy.varName, lazy.typeName);
         }
+        ss << NL;
     }
 }
 
@@ -388,6 +396,7 @@ void TestsPrinter::verboseParameters(const Tests::MethodDescription &methodDescr
     }
     printClassObject(methodDescription, testCase);
     printFunctionParameters(methodDescription, testCase, true);
+    ss << NL;
 }
 
 void TestsPrinter::printFunctionParameters(const Tests::MethodDescription &methodDescription,
@@ -459,6 +468,7 @@ void TestsPrinter::verboseOutputVariable(const Tests::MethodDescription &methodD
         visitor::VerboseParameterVisitor(typesHandler, this, true, types::PointerUsage::RETURN)
             .visit(expectedType, PrinterUtils::EXPECTED, testCase.returnValue.view.get(), std::nullopt);
     }
+    ss << NL;
 }
 
 void TestsPrinter::verboseFunctionCall(const Tests::MethodDescription &methodDescription,
@@ -710,7 +720,6 @@ std::string printer::MultiLinePrinter::print(TestsPrinter *printer,
     const size_t longestFieldIndexForUnionInit = structInfo.longestFieldIndexForUnionInit;
     const bool isStruct = structInfo.subType == types::SubType::Struct;
 
-    bool firstField = true;
     size_t i = 0;
     for (const auto &sview : subViews) {
         if (i != 0) {

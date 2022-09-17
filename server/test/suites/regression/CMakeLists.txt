@@ -37,8 +37,6 @@ set_property(TARGET PR120 PROPERTY C_STANDARD 90)
 
 add_library(PR123 PR123.c)
 
-add_library(PR124 PR124.c)
-
 add_library(PR153 PR153.c)
 
 add_library(GH215 GH215.c)
@@ -48,5 +46,7 @@ target_compile_definitions(issue-276 PUBLIC EXPORT1=)
 target_compile_definitions(issue-276 PUBLIC EXPORT2="")
 target_compile_definitions(issue-276 PUBLIC EXPORT3=4)
 target_compile_definitions(issue-276 PUBLIC EXPORT4="4")
+
+add_library(issue-195 issue-195.c)
 
 set_target_properties(regression PROPERTIES LINK_WHAT_YOU_USE TRUE)

@@ -51,7 +51,10 @@ class UTBotAllProjectSettings(val project: Project) {
         }
 
     fun fireUTBotSettingsChanged() {
-        project.messageBus.syncPublisher(UTBotSettingsChangedListener.TOPIC).settingsChanged(this)
+        project.messageBus.let { bus ->
+            if(!bus.isDisposed)
+                bus.syncPublisher(UTBotSettingsChangedListener.TOPIC).settingsChanged(this)
+        }
     }
 
     fun predictPaths() {
@@ -69,6 +72,6 @@ class UTBotAllProjectSettings(val project: Project) {
 }
 
 data class UTBotSettingsModel(
-    var projectSettings: UTBotProjectStoredSettings.State,
-    var globalSettings: UTBotProjectIndependentSettings.State,
+    val projectSettings: UTBotProjectStoredSettings.State,
+    val globalSettings: UTBotProjectIndependentSettings.State,
 )
