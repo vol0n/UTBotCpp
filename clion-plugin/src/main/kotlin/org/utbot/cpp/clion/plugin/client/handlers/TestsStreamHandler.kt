@@ -55,7 +55,9 @@ class TestsStreamHandler(
     override fun onFinish() {
         super.onFinish()
         // tell ide to refresh vfs and refresh project tree
+        project.logger.info { "Asking to mark files as dirty and refresh" }
         markDirtyAndRefresh(project.nioPath)
+        project.logger.info { "Request has finished!" }
     }
 
     private fun handleSarifReport(sarif: SourceCode) {
@@ -81,7 +83,7 @@ class TestsStreamHandler(
                 // .h file
                 "Generated test file ${sourceCode.localPath}"
             }
-            logger.info(testsGenerationResultMessage)
+            project.logger.info(testsGenerationResultMessage)
         }
     }
 

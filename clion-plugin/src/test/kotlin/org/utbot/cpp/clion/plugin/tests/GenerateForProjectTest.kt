@@ -32,8 +32,11 @@ class GenerateForProjectTest : BaseGenerationTestCase() {
     }
 
     private fun generateForProject() {
+        logger.info { "Invoking action to generate tests for project!" }
         fixture.testAction(GenerateForProjectAction())
+        logger.info { "Started waiting for project request!" }
         waitForRequestsToFinish()
+        logger.info { "Finished waiting for project request!"}
     }
 
     @Test

@@ -90,6 +90,7 @@ abstract class BaseGenerationTestCase {
     }
 
     fun setTarget(targetName: String) {
+        logger.info { "Setting new target during test: $targetName" }
         assert(client.isServerAvailable()) { "Not connected to server!" }
         targetsController.requestTargetsFromServer()
         waitForRequestsToFinish()
@@ -102,6 +103,7 @@ abstract class BaseGenerationTestCase {
      */
     fun waitForRequestsToFinish() {
         // requests to server are asynchronous, need to wait for server to respond
+        logger.info { "Started waiting for server requests!" }
         client.waitForServerRequestsToFinish(ifNotFinished = { unfinishedCoroutines: List<Job> ->
             PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
             logger.info("Waiting for requests to finish: $unfinishedCoroutines")

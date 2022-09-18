@@ -197,8 +197,9 @@ class Client(
     fun waitForServerRequestsToFinish(timeout: Long = SERVER_TIMEOUT,
                                       delayTime: Long = 1000L,
                                       ifNotFinished: (List<Job>) -> Unit = {}) {
-        runBlocking(Dispatchers.EDT) {
+        runBlocking {
             withTimeout(timeout) {
+                logger.info { "Started waiting for requests to finish!\n Unfinished: ${requestsCS.coroutineContext.job.children.toList()} " }
                 while (requestsCS.coroutineContext.job.children.toList().any()) {
                     ifNotFinished(requestsCS.coroutineContext.job.children.toList())
                     delay(delayTime)
@@ -209,6 +210,6 @@ class Client(
 
     companion object {
         const val HEARTBEAT_INTERVAL: Long = 500L
-        const val SERVER_TIMEOUT: Long = 10000L
+        const val SERVER_TIMEOUT: Long = 100000L
     }
 }
