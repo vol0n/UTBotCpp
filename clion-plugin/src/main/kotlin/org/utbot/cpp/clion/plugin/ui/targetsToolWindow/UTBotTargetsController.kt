@@ -48,6 +48,7 @@ class UTBotTargetsController(val project: Project) {
             project,
             getProjectTargetsGrpcRequest(project),
             processTargets = { targetsResponse: Testgen.ProjectTargetsResponse ->
+                project.logger.info { "Handling project targets response!: $targetsResponse" }
                 invokeOnEdt {
                     targetsToolWindow.setBusy(false)
 
@@ -71,6 +72,7 @@ class UTBotTargetsController(val project: Project) {
                 }
             },
             onError = {
+                project.logger.info { "Error in getProjectTargets occured!" }
                 invokeOnEdt {
                     targetsToolWindow.setBusy(false)
                 }

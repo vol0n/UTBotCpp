@@ -25,6 +25,10 @@ abstract class ProjectConfigResponseHandler(
     cancellationJob: Job
 ) : StreamHandlerWithProgress<Testgen.ProjectConfigResponse>(project, grpcStream, progressName, cancellationJob) {
     override fun Testgen.ProjectConfigResponse.getProgress() = progress
+    override fun onData(data: Testgen.ProjectConfigResponse) {
+        project.logger.info { "Received data in project config handler: $data" }
+    }
+
     override fun onLastResponse(response: Testgen.ProjectConfigResponse?) {
         if (response == null) {
             project.logger.error { "No responses from server!" }

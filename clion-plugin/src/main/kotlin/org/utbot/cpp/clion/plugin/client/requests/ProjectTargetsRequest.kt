@@ -2,6 +2,7 @@ package org.utbot.cpp.clion.plugin.client.requests
 
 import com.intellij.openapi.project.Project
 import kotlinx.coroutines.Job
+import org.utbot.cpp.clion.plugin.utils.logger
 import testsgen.Testgen
 import testsgen.TestsGenServiceGrpcKt
 
@@ -16,8 +17,11 @@ class ProjectTargetsRequest(
 
     override suspend fun execute(stub: TestsGenServiceGrpcKt.TestsGenServiceCoroutineStub, cancellationJob: Job?) {
         try {
+            project.logger.info { "Before executing targets request!"}
             super.execute(stub, cancellationJob)
+            project.logger.info { "After executing targets request!"}
         } catch (e: Throwable) {
+            project.logger.info { "Error on project targets reqeust: ${e.message}!"}
             onError(e)
         }
     }
