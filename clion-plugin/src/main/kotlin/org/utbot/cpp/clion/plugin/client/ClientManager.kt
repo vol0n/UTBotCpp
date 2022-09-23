@@ -14,6 +14,9 @@ import org.utbot.cpp.clion.plugin.utils.projectLifetimeDisposable
 
 @Service
 class ClientManager(val project: Project) : Disposable {
+    init {
+        System.err.println("ClientManager constructor is called!")
+    }
     private val clientId = generateClientID()
     private val loggingChannels = listOf<LogChannel>(GTestLogChannelImpl(project), ServerLogChannelImpl(project))
     var client: Client = Client(project, clientId, loggingChannels)

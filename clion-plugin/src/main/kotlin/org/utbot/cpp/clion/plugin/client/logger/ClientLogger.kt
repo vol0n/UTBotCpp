@@ -6,6 +6,9 @@ import com.intellij.openapi.project.Project
 
 @Service
 class ClientLogger(project: Project) {
+    init {
+        System.err.println("Client logger constructor is called!")
+    }
     var level = LogLevel.TRACE
         set(value) {
             info { "Setting new log level: ${value.text}" }
@@ -17,9 +20,9 @@ class ClientLogger(project: Project) {
     private fun init(project: Project): MutableList<LogWriter> {
         if (ApplicationManager.getApplication().isUnitTestMode) {
             println("IN UNIT TEST MODE SETTING LOG WRITER")
-            return mutableListOf(ConsoleWriter(project))
+            return mutableListOf(SystemWriter())
         }
-        else return mutableListOf(SystemWriter())
+        else return mutableListOf(ConsoleWriter(project))
     }
 
     fun info(message: String) = log({ message }, LogLevel.INFO)

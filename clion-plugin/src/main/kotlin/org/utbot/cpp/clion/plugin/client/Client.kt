@@ -38,6 +38,9 @@ class Client(
     private val loggingChannels: List<LogChannel>
 ) : Disposable,
     GrpcClient(projectIndependentSettings.port, projectIndependentSettings.serverName, clientId) {
+    init {
+        System.err.println("CLient constructor is called!")
+    }
     var connectionStatus = ConnectionStatus.INIT
         private set
 
