@@ -54,7 +54,7 @@ jobs:
           chmod +x docker/action-scripts/unit-tests.sh
           ./docker/action-scripts/unit-tests.sh
       - uses: actions/upload-artifact@v2
-        if: failure()
+        if: always()
         with:
           name: UTBot unit tests logs
           path: server/build/logs
