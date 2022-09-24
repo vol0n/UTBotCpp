@@ -14,7 +14,7 @@ import org.utbot.cpp.clion.plugin.settings.settings
 class GenerateForLineTest: BaseGenerationTestCase() {
     private val logger = setupLogger()
 
-    fun doTest(lineNumber: Int, targetName: String = "liblib.a", compiler: CppCompiler = Clang, isVerbose: Boolean = true) {
+    fun doTest(lineNumber: Int, targetName: String = "liblib.a", compiler: CppCompiler = Clang(logger), isVerbose: Boolean = true) {
         logger.info("Testing generate for line using target: $targetName, compiler: ${compiler.name}, verbose mode: $isVerbose, line: $lineNumber")
         compiler.buildProject(projectPath, buildDirName)
         setTarget(targetName)
@@ -43,7 +43,7 @@ class GenerateForLineTest: BaseGenerationTestCase() {
 
     @Test
     fun `test generate for line if in max function line with gcc`() {
-        doTest(IF_IN_MAX_FUNCTION_LINE, compiler = Gcc)
+        doTest(IF_IN_MAX_FUNCTION_LINE, compiler = Gcc(logger))
     }
 
     private fun Editor.moveCursorToLine(lineNumber: Int) {

@@ -41,16 +41,16 @@ class GenerateForProjectTest : BaseGenerationTestCase() {
 
     @Test
     fun `test generate for project with clang, non-verbose mode, targets - all`() {
-        doTest(Clang, false, targetsController.targets.map { it.name })
+        doTest(Clang(logger), false, targetsController.targets.map { it.name })
     }
 
     @Test
     fun `test generate for project with clang, verbose mode`() {
-        doTest(Clang, true, emptyList())
+        doTest(Clang(logger), true, emptyList())
     }
 
     @Test
     fun `test generate for project with gcc, non-verbose mode`() {
-        doTest(Gcc, false, emptyList())
+        doTest(Gcc(logger), false, emptyList())
     }
 }
