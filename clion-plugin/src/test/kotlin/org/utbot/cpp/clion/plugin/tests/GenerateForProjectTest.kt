@@ -1,5 +1,6 @@
 package org.utbot.cpp.clion.plugin.tests
 
+import com.intellij.openapi.components.service
 import org.junit.jupiter.api.Test
 import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
 import org.utbot.cpp.clion.plugin.Clang
@@ -9,6 +10,7 @@ import org.utbot.cpp.clion.plugin.actions.generate.GenerateForProjectAction
 import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
 import org.utbot.cpp.clion.plugin.settings.settings
+import org.utbot.cpp.clion.plugin.ui.targetsToolWindow.UTBotTargetsController
 
 class GenerateForProjectTest : BaseGenerationTestCase() {
     private val logger = setupLogger()
@@ -41,7 +43,7 @@ class GenerateForProjectTest : BaseGenerationTestCase() {
 
     @Test
     fun `test generate for project with clang, non-verbose mode, targets - all`() {
-        doTest(Clang(logger), false, targetsController.targets.map { it.name })
+        doTest(Clang(logger), false, project.service<UTBotTargetsController>().targets.map { it.name })
     }
 
     @Test

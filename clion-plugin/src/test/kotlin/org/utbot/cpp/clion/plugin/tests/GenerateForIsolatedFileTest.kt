@@ -12,7 +12,7 @@ class GenerateForIsolatedFileTest : BaseGenerationTestCase() {
     private val logger = setupLogger()
     @Test
     fun testGenerateForFile() {
-        val compiler = Clang
+        val compiler = Clang(logger)
         logger.info(
             "Testing generate for snippet using target: auto, compiler: ${compiler.name}, verbose mode = ${project.settings.storedSettings.verbose}")
         compiler.buildProject(projectPath, buildDirName)

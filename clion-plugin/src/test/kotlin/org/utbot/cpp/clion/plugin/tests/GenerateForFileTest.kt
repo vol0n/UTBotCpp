@@ -27,11 +27,11 @@ class GenerateForFileTest : BaseGenerationTestCase() {
 
     @Test
     fun `test generate for file with verbose mode`() {
-        doTest("/lib/basic_functions.c", Clang, true)
+        doTest("/lib/basic_functions.c", Clang(logger), true)
     }
 
     @Test
     fun `test generate for file with non-verbose mode`() {
-        doTest("/lib/basic_functions.c", Clang, false)
+        doTest("/lib/basic_functions.c", Clang(logger), false)
     }
 }
