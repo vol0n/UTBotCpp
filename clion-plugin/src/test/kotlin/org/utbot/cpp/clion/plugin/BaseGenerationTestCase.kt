@@ -75,8 +75,11 @@ abstract class BaseGenerationTestCase {
         return project.logger
     }
 
+    open fun beforeCreatingProject() {}
+
     private fun createFixture(): CodeInsightTestFixture {
         println("Creating fixture")
+        beforeCreatingProject()
         val fixture = IdeaTestFixtureFactory.getFixtureFactory().let {
             it.createCodeInsightFixture(
                 it.createFixtureBuilder(projectPath.name, projectPath, false).fixture,
