@@ -50,8 +50,10 @@ class UTBotTargetsController(val project: Project) {
             processTargets = { targetsResponse: Testgen.ProjectTargetsResponse ->
                 project.logger.info { "Handling project targets response!: $targetsResponse" }
                 invokeOnEdt {
+                    project.logger.info { "Inside edt block" }
                     targetsToolWindow.setBusy(false)
 
+                    project.logger.info { "Set busy" }
                     targetsUiModel.apply {
                         targetsUiModel.replaceAll(
                             targetsResponse.targetsList.map { projectTarget ->
@@ -68,7 +70,9 @@ class UTBotTargetsController(val project: Project) {
                             targetToSelect = it
                         }
                     }
+                    project.logger.info { "Setting new target" }
                     targetsToolWindow.setSelectedTarget(targetToSelect)
+                    project.logger.info { "Finished edt block" }
                 }
             },
             onError = {
