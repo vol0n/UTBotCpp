@@ -105,7 +105,7 @@ jobs:
           ./docker/action-scripts/runClionIntegrationTests.sh
       - name: Upload logs
         uses: actions/upload-artifact@v2
-        if: failure()
+        if: always()
         with:
           name: test-report
           path: |
