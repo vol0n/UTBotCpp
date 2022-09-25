@@ -26,6 +26,7 @@
 #include "utils/path/FileSystemPath.h"
 
 #include "loguru.h"
+#include "CMakeGenerator.h"
 
 #include <unordered_set>
 #include <utility>

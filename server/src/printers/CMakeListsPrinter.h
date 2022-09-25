@@ -13,17 +13,13 @@
 namespace printer {
     class CMakeListsPrinter {
     public:
-        CMakeListsPrinter() = delete;
-        CMakeListsPrinter(const CMakeListsPrinter &other) = delete;
-        explicit CMakeListsPrinter(const BaseTestGen* testGen, fs::path primaryCompiler);
+        CMakeListsPrinter();
 
         std::string SANITIZER_FLAGS_VAR_NAME="SANITIZER_FLAGS";
         std::string SANITIZER_LINK_FLAGS_VAR_NAME="SANITIZER_LINK_FLAGS";
         std::string COVERAGE_LINK_FLAGS_VAR_NAME="COVERAGE_LINK_FLAGS";
         using std_path = std::filesystem::path;
 
-
-        CMakeListsPrinter(const BaseTestGen *testGen);
 
         std::string LBr(bool startsWithSpace = false);
 
@@ -33,15 +29,6 @@ namespace printer {
 
         std::stringstream ss;
         int tabsDepth = 0;
-        CollectionUtils::FileSet alreadyBuildFiles;
-        const fs::path primaryCompiler;
-        const fs::path primaryCxxCompiler;
-        const CompilationUtils::CompilerName primaryCompilerName;
-        const CompilationUtils::CompilerName primaryCxxCompilerName;
-        const std::string coverageLinkFlags;
-        const std::string sanitizerLinkFlags;
-        const fs::path serverTestsDir;
-        const fs::path currentCMakeDir;
 
         using FileToObjectInfo = CollectionUtils::MapFileTo<std::shared_ptr<const BuildDatabase::ObjectFileInfo>>;
 
@@ -50,33 +37,56 @@ namespace printer {
         }
 
         void addTargetLinkLibraries(const std::string &targetName, const std::vector<std::string>& librariesNamesToLink);
-        void generate(const Linker::LinkResult &linkResult);
-        void generate(const fs::path &target, const CollectionUtils::FileSet &stubsSet,
-                      const CollectionUtils::FileSet &presentedFiles);
 
-    protected:
-        void writeCopyrightHeader();
-    private:
-        const BaseTestGen *testGen;
-    private:
         void addDiscoverTestDirective(const std::string &testTargetName);
-        void generateCMakeForTargetRecursively(const fs::path &target, const CollectionUtils::FileSet& stubsSet);
+
+        void addExecutable(const std::string &executableName, const std::vector<fs::path> &sourceFiles);
+
+        void addIncludeDirectoriesForTarget(const std::string &targetName, const std::set<std::string> includePaths);
+
+        void addLibrary(const std::string &libraryName, bool isShared, const std::vector<fs::path> &sourceFiles);
+
         void addLinkTargetRecursively(const fs::path &path, bool isRoot, const CollectionUtils::FileSet &stubsSet);
-        void write(const fs::path &path);
+
         void
         addTests(const CollectionUtils::FileSet &filesUnderTest, const fs::path &target,
                  const CollectionUtils::FileSet &stubSet);
+
+        void generateCMakeForTargetRecursively(const fs::path &target, const CollectionUtils::FileSet& stubsSet);
+
+        void generateCMakeLists(const CollectionUtils::FileSet &testsSourcePaths);
+
+        std_path getAbsolutePath(const fs::path &path);
+
+        std::set<std::string> getIncludeDirectoriesFor(const fs::path &target);
+
+        std::string getLibraryName(const fs::path &lib, bool isRoot);
+
+        fs::path getRelativePath(const fs::path &path);
+
+        std::string getRootLibraryName(const fs::path &path);
+
+        std::shared_ptr<const BuildDatabase::TargetInfo> getTargetUnitInfo(const fs::path &targetPath);
+
+        void setLinkOptionsForTarget(const std::string &targetName, const std::string &options);
+
+        const BaseTestGen *testGen;
+
+        std::string wrapCMakeVariable(const std::string &variableName);
+
+        void write(const fs::path &path);
+
+    protected:
+        void writeCopyrightHeader();
+
+    private:
         fs::path getTargetCmakePath(const fs::path &lib);
         void addInclude(const fs::path &cmakeFileToInclude);
-        std_path getAbsolutePath(const fs::path &path);
-        fs::path getRelativePath(const fs::path &path);
+
         void addOptionsForSourceFiles(const FileToObjectInfo &sourceFiles);
-        void addLibrary(const std::string &libraryName, bool isShared, const FileToObjectInfo &sourceFiles);
+
         void addLinkFlagsForLibrary(const std::string &targetName, const fs::path &targetPath, bool transformExeToLib = false);
         fs::path getCMakeFileForTestFile(const fs::path &testFile);
-        void generateCMakeLists(const CollectionUtils::FileSet &testsSourcePaths);
-        std::list<std::string>
-        prepareFlagsForLinkCommand(utbot::LinkCommand &LinkCommand, bool transformExeToLib);
 
         std::string getTestName(const fs::path &test);
 
@@ -86,22 +96,13 @@ namespace printer {
 
         void addVariable(const std::string &varName, const std::string &value);
 
-        std::string wrapCMakeVariable(const std::string &variableName);
-
         void tryChangeToAbsolute(std::string &argument);
 
 
         void setCompileOptionsForSource(const fs::path &sourceFile, const std::string &options);
 
-        void addExecutable(const std::string &executableName, const std::vector<fs::path> &sourceFiles);
-
-        std::string getRootLibraryName(const fs::path &path);
-
-        std::string getLibraryName(const fs::path &lib, bool isRoot);
-
         std::list<std::string> prepareCompileFlagsForTestFile(const fs::path &sourcePath);
 
-        void setLinkOptionsForTarget(const std::string &targetName, const std::string &options);
     };
 }
 
