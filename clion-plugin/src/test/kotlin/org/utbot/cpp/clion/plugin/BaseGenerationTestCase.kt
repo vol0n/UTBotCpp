@@ -1,5 +1,6 @@
 package org.utbot.cpp.clion.plugin
 
+import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.PlatformTestUtil
@@ -67,7 +68,6 @@ abstract class BaseGenerationTestCase {
 
     val client: Client
         get() = project.getCurrentClient()
-    val targetsController = UTBotTargetsController(project)
 
 
     protected fun setupLogger(): ClientLogger {
@@ -92,6 +92,7 @@ abstract class BaseGenerationTestCase {
     fun setTarget(targetName: String) {
         logger.info { "Setting new target during test: $targetName" }
         assert(client.isServerAvailable()) { "Not connected to server!" }
+        val targetsController: UTBotTargetsController = project.service<UTBotTargetsController>()
         targetsController.requestTargetsFromServer()
         waitForRequestsToFinish()
         PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
