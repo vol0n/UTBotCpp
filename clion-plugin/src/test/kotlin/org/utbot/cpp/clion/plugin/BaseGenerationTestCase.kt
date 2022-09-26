@@ -24,6 +24,8 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.name
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import org.utbot.cpp.clion.plugin.client.logger.ClientLogger
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -90,6 +92,15 @@ abstract class BaseGenerationTestCase {
         fixture.testDataPath = projectPath.toString()
         println("Finished creating fixture")
         return fixture
+    }
+
+    fun waitForConnection(timeout: Long = 10000L) {
+        runBlocking {
+            while (!client.isServerAvailable()) {
+                delay(1000L)
+                logger.info { "Waiting for connection to server!" }
+            }
+        }
     }
 
     fun setTarget(targetName: String) {
