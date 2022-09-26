@@ -103,12 +103,12 @@ abstract class BaseGenerationTestCase {
                     }
                 }
             } catch (_: TimeoutCancellationException) {}
+            assert(client.isServerAvailable()) { "Not connected to server!" }
         }
     }
 
     fun setTarget(targetName: String) {
         logger.info { "Setting new target during test: $targetName" }
-        // assert(client.isServerAvailable()) { "Not connected to server!" }
         val targetsController: UTBotTargetsController = project.service<UTBotTargetsController>()
         waitForConnection()
         targetsController.requestTargetsFromServer()
