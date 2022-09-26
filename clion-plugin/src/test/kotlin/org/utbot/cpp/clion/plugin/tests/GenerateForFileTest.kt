@@ -17,6 +17,7 @@ class GenerateForFileTest : BaseGenerationTestCase() {
         project.settings.storedSettings.verbose = isVerboseMode
 
         fixture.configureFromTempProjectFile(relativeFilePath)
+        waitForConnection()
         fixture.performEditorAction("org.utbot.cpp.clion.plugin.actions.GenerateForFileAction")
         waitForRequestsToFinish()
 

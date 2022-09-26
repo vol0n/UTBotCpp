@@ -23,6 +23,7 @@ class GenerateForLineTest: BaseGenerationTestCase() {
         fixture.configureFromTempProjectFile("/lib/basic_functions.c")
         fixture.editor.moveCursorToLine(lineNumber)
 
+        waitForConnection()
         fixture.performEditorAction("org.utbot.cpp.clion.plugin.actions.GenerateForLineAction")
         waitForRequestsToFinish()
 

@@ -20,6 +20,7 @@ class GenerateForProjectTest : BaseGenerationTestCase() {
         project.settings.storedSettings.verbose = isVerbose
         compiler.buildProject(projectPath, buildDirName)
 
+        waitForConnection()
         for (targetName in targetNames) {
             setTarget(targetName)
             generateForProject()

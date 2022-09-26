@@ -24,8 +24,10 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.name
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.utbot.cpp.clion.plugin.client.logger.ClientLogger
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -77,11 +79,8 @@ abstract class BaseGenerationTestCase {
         return project.logger
     }
 
-    open fun beforeCreatingProject() {}
-
     private fun createFixture(): CodeInsightTestFixture {
         println("Creating fixture")
-        beforeCreatingProject()
         val fixture = IdeaTestFixtureFactory.getFixtureFactory().let {
             it.createCodeInsightFixture(
                 it.createFixtureBuilder(projectPath.name, projectPath, false).fixture,
@@ -96,10 +95,14 @@ abstract class BaseGenerationTestCase {
 
     fun waitForConnection(timeout: Long = 10000L) {
         runBlocking {
-            while (!client.isServerAvailable()) {
-                delay(1000L)
-                logger.info { "Waiting for connection to server!" }
-            }
+            try {
+                withTimeout(timeout) {
+                    while (!client.isServerAvailable()) {
+                        delay(1000L)
+                        logger.info { "Waiting for connection to server!" }
+                    }
+                }
+            } catch (_: TimeoutCancellationException) {}
         }
     }
 
@@ -107,6 +110,7 @@ abstract class BaseGenerationTestCase {
         logger.info { "Setting new target during test: $targetName" }
         // assert(client.isServerAvailable()) { "Not connected to server!" }
         val targetsController: UTBotTargetsController = project.service<UTBotTargetsController>()
+        waitForConnection()
         targetsController.requestTargetsFromServer()
         waitForRequestsToFinish()
         PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
