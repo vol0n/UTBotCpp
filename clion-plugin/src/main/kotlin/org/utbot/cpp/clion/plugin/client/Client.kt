@@ -1,7 +1,6 @@
 package org.utbot.cpp.clion.plugin.client
 
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.EDT
 import com.intellij.openapi.project.Project
 import io.grpc.Status
 import kotlinx.coroutines.CoroutineExceptionHandler
