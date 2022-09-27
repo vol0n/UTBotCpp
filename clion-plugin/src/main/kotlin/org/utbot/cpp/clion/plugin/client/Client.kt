@@ -213,6 +213,6 @@ class Client(
 
     companion object {
         const val HEARTBEAT_INTERVAL: Long = 500L
-        const val SERVER_TIMEOUT: Long = 100000L
+        const val SERVER_TIMEOUT: Long = 300000L
     }
 }
