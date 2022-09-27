@@ -26,6 +26,7 @@ class UTBotStartupActivity : StartupActivity {
     private fun initializeClient(project: Project) {
         if (ApplicationManager.getApplication().isUnitTestMode) {
             println("In unit test mode: initialize client")
+            // check ci again
             // return
         }
         println("Starting the client class")
