@@ -668,13 +668,17 @@ Status Server::TestsGenServiceImpl::GetProjectTargets(ServerContext *context,
     } catch (BaseException const &e) {
         LOG_S(INFO) << e.what() << NL;
         return Status(StatusCode::INTERNAL, e.what());
+    } catch (std::exception &e) {
+        LOG_S(INFO) << e.what() << NL;
+        return Status(StatusCode::INTERNAL, e.what());
     } catch (...) {
         std::exception_ptr p = std::current_exception();
-        LOG_S(INFO) <<(p ? p.__cxa_exception_type()->name() : "null") << NL;
+        LOG_S(INFO) << (p ? p.__cxa_exception_type()->name() : "null") << NL;
         return Status(StatusCode::INTERNAL, "");
     }
     return Status::OK;
 }
+
 
 Status Server::TestsGenServiceImpl::GetFileTargets(ServerContext *context,
                                                    const FileTargetsRequest *request,
@@ -701,7 +705,7 @@ Status Server::TestsGenServiceImpl::GetFileTargets(ServerContext *context,
 
 RequestLockMutex &Server::TestsGenServiceImpl::getLock() {
     std::string const &client = RequestEnvironment::getClientId();
-    auto[iterator, inserted] = locks.try_emplace(client);
+    auto [iterator, inserted] = locks.try_emplace(client);
     return iterator->second;
 }
 
