@@ -1,10 +1,8 @@
 package org.utbot.cpp.clion.plugin
 
 import com.intellij.openapi.components.service
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.testFramework.PlatformTestUtil
-import com.intellij.testFramework.TestLoggerFactory
 import com.intellij.testFramework.fixtures.CodeInsightTestFixture
 import com.intellij.testFramework.fixtures.IdeaTestFixtureFactory
 import com.intellij.testFramework.fixtures.impl.TempDirTestFixtureImpl
@@ -14,11 +12,9 @@ import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.extension.ExtendWith
 import org.utbot.cpp.clion.plugin.client.Client
-import org.utbot.cpp.clion.plugin.client.logger.SystemWriter
 import org.utbot.cpp.clion.plugin.settings.settings
 import org.utbot.cpp.clion.plugin.ui.targetsToolWindow.UTBotTargetsController
 import org.utbot.cpp.clion.plugin.utils.getCurrentClient
-import org.utbot.cpp.clion.plugin.utils.logger
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -28,7 +24,7 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
-import org.utbot.cpp.clion.plugin.client.logger.ClientLogger
+import org.tinylog.kotlin.Logger
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @ExtendWith(SwingEdtInterceptor::class)
@@ -59,27 +55,17 @@ abstract class BaseGenerationTestCase {
     val fixture: CodeInsightTestFixture = createFixture()
     val project: Project
         get() = fixture.project
-    private val logger = setupLogger()
 
     init {
         project.settings.storedSettings.buildDirRelativePath = buildDirName
         project.settings.storedSettings.testsDirRelativePath = projectPath.relativize(testsDirectoryPath).toString()
-        project.logger.logWriters.let {
-            it.clear()
-            it.add(SystemWriter())
-        }
     }
 
     val client: Client
         get() = project.getCurrentClient()
 
-
-    protected fun setupLogger(): ClientLogger {
-        Logger.setFactory(TestLoggerFactory::class.java)
-        return project.logger
-    }
-
     private fun createFixture(): CodeInsightTestFixture {
+        // can't use Logger
         println("Creating fixture")
         val fixture = IdeaTestFixtureFactory.getFixtureFactory().let {
             it.createCodeInsightFixture(
@@ -99,16 +85,17 @@ abstract class BaseGenerationTestCase {
                 withTimeout(timeout) {
                     while (!client.isServerAvailable()) {
                         delay(1000L)
-                        logger.info { "Waiting for connection to server!" }
+                        Logger.info { "Waiting for connection to server!" }
                     }
                 }
             } catch (_: TimeoutCancellationException) {}
             assert(client.isServerAvailable()) { "Not connected to server!" }
+            Logger.info { "Connected" }
         }
     }
 
     fun setTarget(targetName: String) {
-        logger.info { "Setting new target during test: $targetName" }
+        Logger.info { "Setting new target during test: $targetName" }
         val targetsController: UTBotTargetsController = project.service<UTBotTargetsController>()
         waitForConnection()
         targetsController.requestTargetsFromServer()
@@ -122,26 +109,26 @@ abstract class BaseGenerationTestCase {
      */
     fun waitForRequestsToFinish() {
         // requests to server are asynchronous, need to wait for server to respond
-        logger.info { "Started waiting for server requests!" }
+        Logger.info { "Started waiting for server requests!" }
         client.waitForServerRequestsToFinish(ifNotFinished = { unfinishedCoroutines: List<Job> ->
             PlatformTestUtil.dispatchAllInvocationEventsInIdeEventQueue()
-            logger.info("Waiting for requests to finish: $unfinishedCoroutines")
+            Logger.info("Waiting for requests to finish: $unfinishedCoroutines")
         })
-        logger.info("Finished waiting!")
+        Logger.info("Finished waiting!")
     }
 
     @AfterEach
     fun tearDown() {
-        logger.info("tearDown is called!")
+        Logger.info("tearDown is called!")
         project.settings.buildDirPath.delete(recursively = true)
         testsDirectoryPath.delete(recursively = true)
     }
 
     @AfterAll
     fun tearDownAll() {
-        logger.info("tearDownAll of BaseGenerationTest is called")
+        Logger.info("tearDownAll of BaseGenerationTest is called")
         waitForRequestsToFinish()
         fixture.tearDown()
-        logger.info("tearDownAll of BaseGenerationTest has finished!")
+        Logger.info("tearDownAll of BaseGenerationTest has finished!")
     }
 }

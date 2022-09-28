@@ -2,6 +2,7 @@ package org.utbot.cpp.clion.plugin.tests
 
 import com.intellij.openapi.components.service
 import org.junit.jupiter.api.Test
+import org.tinylog.kotlin.Logger
 import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
 import org.utbot.cpp.clion.plugin.Clang
 import org.utbot.cpp.clion.plugin.CppCompiler
@@ -13,9 +14,8 @@ import org.utbot.cpp.clion.plugin.settings.settings
 import org.utbot.cpp.clion.plugin.ui.targetsToolWindow.UTBotTargetsController
 
 class GenerateForProjectTest : BaseGenerationTestCase() {
-    private val logger = setupLogger()
     private fun doTest(compiler: CppCompiler, isVerbose: Boolean, targetNames: List<String> = emptyList()) {
-        logger.info ( "Testing generate for project with ${compiler.name}, verbose mode: $isVerbose, and targets: ${targetNames.joinToString()}")
+        Logger.info ( "Testing generate for project with ${compiler.name}, verbose mode: $isVerbose, and targets: ${targetNames.joinToString()}")
 
         project.settings.storedSettings.verbose = isVerbose
         compiler.buildProject(projectPath, buildDirName)
@@ -35,25 +35,25 @@ class GenerateForProjectTest : BaseGenerationTestCase() {
     }
 
     private fun generateForProject() {
-        logger.info { "Invoking action to generate tests for project!" }
+        Logger.info { "Invoking action to generate tests for project!" }
         fixture.testAction(GenerateForProjectAction())
-        logger.info { "Started waiting for project request!" }
+        Logger.info { "Started waiting for project request!" }
         waitForRequestsToFinish()
-        logger.info { "Finished waiting for project request!"}
+        Logger.info { "Finished waiting for project request!"}
     }
 
     @Test
     fun `test generate for project with clang, non-verbose mode, targets - all`() {
-        doTest(Clang(logger), false, project.service<UTBotTargetsController>().targets.map { it.name })
+        doTest(Clang(), false, project.service<UTBotTargetsController>().targets.map { it.name })
     }
 
     @Test
     fun `test generate for project with clang, verbose mode`() {
-        doTest(Clang(logger), true, emptyList())
+        doTest(Clang(), true, emptyList())
     }
 
     @Test
     fun `test generate for project with gcc, non-verbose mode`() {
-        doTest(Gcc(logger), false, emptyList())
+        doTest(Gcc(), false, emptyList())
     }
 }

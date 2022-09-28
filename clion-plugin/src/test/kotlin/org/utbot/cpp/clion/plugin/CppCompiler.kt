@@ -1,9 +1,9 @@
 package org.utbot.cpp.clion.plugin
 
-import org.utbot.cpp.clion.plugin.client.logger.ClientLogger
+import org.tinylog.kotlin.Logger
 import java.nio.file.Path
 
-abstract class CppCompiler(val logger: ClientLogger) {
+abstract class CppCompiler() {
     abstract val name: String
 
     protected val bearPath = "/utbot_distr/bear/bin/bear"
@@ -12,19 +12,20 @@ abstract class CppCompiler(val logger: ClientLogger) {
     abstract fun produceBuildCommand(buildDirName: String): String
     fun buildProject(projectPath: Path, buildDirName: String) {
         val buildCommand = produceBuildCommand(buildDirName)
-        logger.trace{ "Building the project with compiler: $name, and build directory name: $buildDirName" }
-        logger.trace{ "BUILD COMMAND: $buildCommand" }
+        Logger.trace { "Building the project with compiler: $name, and build directory name: $buildDirName" }
+        Logger.trace { "BUILD COMMAND: $buildCommand" }
         ProcessBuilder("bash", "-c", buildCommand)
             .directory(projectPath.toFile())
             .start()
             .waitFor()
 
-        logger.trace{ "BUILDING FINISHED!" }
-        projectPath.resolve(buildDirName).assertFileOrDirExists("Build directory after building project does not exist!")
+        Logger.trace { "BUILDING FINISHED!" }
+        projectPath.resolve(buildDirName)
+            .assertFileOrDirExists("Build directory after building project does not exist!")
     }
 }
 
-class Clang(logger: ClientLogger): CppCompiler(logger) {
+class Clang() : CppCompiler() {
     override val name: String
         get() = "Clang"
 
@@ -35,10 +36,11 @@ class Clang(logger: ClientLogger): CppCompiler(logger) {
             "mkdir -p $buildDirName && cd $buildDirName && $cmakePath .. && $bearPath make -j8"
 }
 
-class Gcc(logger: ClientLogger): CppCompiler(logger) {
+class Gcc() : CppCompiler() {
     override val name: String
         get() = "Gcc"
 
-    override fun produceBuildCommand(buildDirName: String) = "export C_INCLUDE_PATH=\"\" && export CC=gcc && export CXX=g++ && " +
-            "mkdir -p $buildDirName && cd $buildDirName && $cmakePath .. && $bearPath make -j8"
+    override fun produceBuildCommand(buildDirName: String) =
+        "export C_INCLUDE_PATH=\"\" && export CC=gcc && export CXX=g++ && " +
+                "mkdir -p $buildDirName && cd $buildDirName && $cmakePath .. && $bearPath make -j8"
 }

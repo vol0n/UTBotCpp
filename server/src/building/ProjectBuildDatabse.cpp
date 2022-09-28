@@ -40,14 +40,22 @@ ProjectBuildDatabase::ProjectBuildDatabase(fs::path _buildCommandsJsonPath,
         throw CompilationDatabaseException("Couldn't open link_commands.json or compile_commands.json files");
     }
 
+    LOG_S(INFO) << "Getting json from a file";
     auto linkCommandsJson = JsonUtils::getJsonFromFile(linkCommandsJsonPath);
     auto compileCommandsJson = JsonUtils::getJsonFromFile(compileCommandsJsonPath);
+    LOG_S(INFO) << "Finished getting json";
 
+    LOG_S(INFO) << "Call init objects from compile commands";
     initObjects(compileCommandsJson);
+    LOG_S(INFO) << "Call init info from link commands";
     initInfo(linkCommandsJson);
+    LOG_S(INFO) << "Call filter installed files";
     filterInstalledFiles();
+    LOG_S(INFO) << "add Local shared libs";
     addLocalSharedLibraries();
+    LOG_S(INFO) << "fill target info parents";
     fillTargetInfoParents();
+    LOG_S(INFO) << "create clang compile commands json";
     createClangCompileCommandsJson();
 }
 

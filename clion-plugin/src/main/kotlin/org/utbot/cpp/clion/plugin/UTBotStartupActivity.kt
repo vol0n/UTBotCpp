@@ -25,11 +25,9 @@ class UTBotStartupActivity : StartupActivity {
     // Client in turn will create a grpc channel and start heart-beating the server.
     private fun initializeClient(project: Project) {
         if (ApplicationManager.getApplication().isUnitTestMode) {
-            println("In unit test mode: initialize client")
             // check ci again
-            // return
+            return
         }
-        println("Starting the client class")
         project.logger.info { "Starting the client class" }
         project.service<ClientManager>()
     }
