@@ -57,6 +57,7 @@ ProjectBuildDatabase::ProjectBuildDatabase(fs::path _buildCommandsJsonPath,
     fillTargetInfoParents();
     LOG_S(INFO) << "create clang compile commands json";
     createClangCompileCommandsJson();
+    LOG_S(INFO) << "create clang compile commands json finished";
 }
 
 ProjectBuildDatabase::ProjectBuildDatabase(utbot::ProjectContext projectContext) : ProjectBuildDatabase(

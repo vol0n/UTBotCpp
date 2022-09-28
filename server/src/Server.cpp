@@ -654,6 +654,7 @@ Status Server::TestsGenServiceImpl::GetProjectTargets(ServerContext *context,
 
     try {
         utbot::ProjectContext projectContext{request->projectcontext()};
+        LOG_S(INFO) << "Creating shared pointer to project build database";
         auto buildDatabase = std::make_shared<ProjectBuildDatabase>(projectContext);
         LOG_S(INFO) << "created ProjectBuildDatabase";
         std::vector<fs::path> targets = buildDatabase->getAllTargetPaths();
