@@ -670,6 +670,7 @@ Status Server::TestsGenServiceImpl::GetProjectTargets(ServerContext *context,
         return Status(StatusCode::INTERNAL, e.what());
     } catch (std::exception &e) {
         LOG_S(INFO) << e.what() << NL;
+
         return Status(StatusCode::INTERNAL, e.what());
     } catch (...) {
         std::exception_ptr p = std::current_exception();
