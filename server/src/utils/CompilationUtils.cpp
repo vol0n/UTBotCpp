@@ -14,14 +14,18 @@
 namespace CompilationUtils {
     std::shared_ptr<CompilationDatabase>
     getCompilationDatabase(const fs::path &buildCommandsJsonPath) {
+        LOG_S(INFO) << "getCompilationDatabase is called: " << buildCommandsJsonPath;
         fs::path clangCompileCommandsJsonPath =
             getClangCompileCommandsJsonPath(buildCommandsJsonPath);
+        LOG_S(INFO) << "getClangCompileCommands json path";
         std::string errorMessage;
         auto compilationDatabase = CompilationDatabase::autoDetectFromDirectory(
             clangCompileCommandsJsonPath.string(), errorMessage);
+        LOG_S(INFO) << "after auto detect from directory";
         if (!errorMessage.empty()) {
             throw CompilationDatabaseException(errorMessage);
         }
+        LOG_S(INFO) << "Before returning";
         return compilationDatabase;
     }
 
