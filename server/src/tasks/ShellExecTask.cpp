@@ -139,7 +139,9 @@ ExecUtils::ExecutionResult ShellExecTask::runPlainShellCommand(const std::string
                  bool ignoreErrors,
                  const std::optional<std::chrono::seconds> &timeout) {
     ExecutionParameters bashShellParams("/bin/sh", {"-c", command});
+    LOG_S(INFO) << "after creating execution parameters"
     auto task = ShellExecTask(bashShellParams, fromDir, Paths::getExecLogPath(projectName), redirectStderr, logOut, ignoreErrors, timeout);
+    LOG_S(INFO) << "After creating shell exec task";
     return task.run();
 }
 
