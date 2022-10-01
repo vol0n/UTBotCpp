@@ -185,7 +185,7 @@ namespace CompilationUtils {
     std::optional<fs::path> getResourceDirectory(const fs::path &buildCompilerPath) {
         LOG_S(INFO) << "in getResourceDirectory";
         auto compilerName = CompilationUtils::getCompilerName(buildCompilerPath);
-        LOG_S(INFO) << "after gettingCompilerName: " << compilerName;
+        LOG_S(INFO) << "after gettingCompilerName: ";
         switch (compilerName) {
         case CompilerName::GCC:
         case CompilerName::GXX: {
@@ -201,7 +201,7 @@ namespace CompilationUtils {
                 if (fs::exists(resourceDirPath)) {
                     return resourceDirPath;
                 } else {
-                    LOG_S(ERROR) << "Resource directory doesn't exist: " << resourceDirPath;
+                    LOG_S(ERROR) << "Resource directory doesn't exist: " << resourceDirPath.string();
                     return std::nullopt;
                 }
             } else {
