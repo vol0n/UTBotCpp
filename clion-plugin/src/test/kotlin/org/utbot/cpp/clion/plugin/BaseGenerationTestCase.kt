@@ -127,7 +127,6 @@ abstract class BaseGenerationTestCase {
     @AfterAll
     fun tearDownAll() {
         Logger.info("tearDownAll of BaseGenerationTest is called")
-        waitForRequestsToFinish()
         fixture.tearDown()
         Logger.info("tearDownAll of BaseGenerationTest has finished!")
     }

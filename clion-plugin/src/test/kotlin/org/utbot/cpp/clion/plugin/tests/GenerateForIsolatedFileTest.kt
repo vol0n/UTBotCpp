@@ -1,5 +1,6 @@
 package org.utbot.cpp.clion.plugin.tests
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.tinylog.kotlin.Logger
 import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
@@ -9,6 +10,7 @@ import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
 import org.utbot.cpp.clion.plugin.settings.settings
 
+@Disabled
 class GenerateForIsolatedFileTest : BaseGenerationTestCase() {
     @Test
     fun testGenerateForFile() {

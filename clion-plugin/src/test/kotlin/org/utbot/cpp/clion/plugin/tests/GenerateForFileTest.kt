@@ -1,5 +1,6 @@
 package org.utbot.cpp.clion.plugin.tests
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.tinylog.kotlin.Logger
 import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
@@ -10,6 +11,7 @@ import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
 import org.utbot.cpp.clion.plugin.settings.settings
 
+@Disabled
 class GenerateForFileTest : BaseGenerationTestCase() {
     fun doTest(relativeFilePath: String, compiler: CppCompiler, isVerboseMode: Boolean) {
         Logger.info("Testing generate for file with file: $relativeFilePath, compiler: ${compiler.name}, verboseMode: $isVerboseMode")

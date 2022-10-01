@@ -1,6 +1,7 @@
 package org.utbot.cpp.clion.plugin.tests
 
 import com.intellij.openapi.components.service
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.tinylog.kotlin.Logger
 import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
@@ -13,6 +14,7 @@ import org.utbot.cpp.clion.plugin.assertTestFilesExist
 import org.utbot.cpp.clion.plugin.settings.settings
 import org.utbot.cpp.clion.plugin.ui.targetsToolWindow.UTBotTargetsController
 
+@Disabled
 class GenerateForProjectTest : BaseGenerationTestCase() {
     private fun doTest(compiler: CppCompiler, isVerbose: Boolean, targetNames: List<String> = emptyList()) {
         Logger.info ( "Testing generate for project with ${compiler.name}, verbose mode: $isVerbose, and targets: ${targetNames.joinToString()}")
