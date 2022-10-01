@@ -183,13 +183,17 @@ namespace CompilationUtils {
     }
 
     std::optional<fs::path> getResourceDirectory(const fs::path &buildCompilerPath) {
+        LOG_S(INFO) << "in getResourceDirectory";
         auto compilerName = CompilationUtils::getCompilerName(buildCompilerPath);
+        LOG_S(INFO) << "after gettingCompilerName: " << compilerName;
         switch (compilerName) {
         case CompilerName::GCC:
         case CompilerName::GXX: {
             // /usr/bin/gcc -> /usr/lib/gcc/x86_64-linux-gnu/9/libgcc.a
             std::string command = StringUtils::stringFormat("%s -print-libgcc-file-name", buildCompilerPath);
+            LOG_S(INFO) << "command: " << command;
             auto [output, status, outPath] = ShellExecTask::runPlainShellCommand(command);
+            LOG_S(INFO) << "after running shell task";
             if (status == 0) {
                 StringUtils::rtrim(output);
                 // /usr/lib/gcc/x86_64-linux-gnu/9/libgcc.a -> /usr/lib/gcc/x86_64-linux-gnu/9
@@ -211,7 +215,9 @@ namespace CompilationUtils {
         case CompilerName::CLANGXX: {
             // /utbot_distr/install/bin/clang -> /utbot_distr/install/lib/clang/10.0.1
             std::string command = StringUtils::stringFormat("%s -print-resource-dir", buildCompilerPath);
+            LOG_S(INFO) << "command: " << command;
             auto [output, status, outPath] = ShellExecTask::runPlainShellCommand(command);
+            LOG_S(INFO) << "after running shell task";
             if (status == 0) {
                 StringUtils::rtrim(output);
                 fs::path resourceDirPath = output;
