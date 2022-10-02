@@ -10,8 +10,8 @@ apt-get install libfreetype6 fontconfig fonts-dejavu -y
 
 set -e
 
-GRPC_VERBOSITY=debug
-GRPC_TRACE=api
+export GRPC_VERBOSITY=debug
+export GRPC_TRACE=api
 ./server/build/utbot server &> server_output.log &
 
 cd clion-plugin
