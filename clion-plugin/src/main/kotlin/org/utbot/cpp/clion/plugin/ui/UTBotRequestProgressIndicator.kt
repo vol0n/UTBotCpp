@@ -32,7 +32,8 @@ class UTBotRequestProgressIndicator(
     override fun stop() {
         requestJob?.cancel()
         finish()
-        super.stop()
+        if (isRunning())
+            super.stop()
     }
 
     fun finish() = finish(requestTask)
@@ -40,7 +41,8 @@ class UTBotRequestProgressIndicator(
     override fun cancel() {
         requestJob?.cancel()
         finish(requestTask)
-        super.cancel()
+        if (isRunning())
+            super.cancel()
         notifyInfo("Successfully canceled: $taskDisplayName")
     }
 
