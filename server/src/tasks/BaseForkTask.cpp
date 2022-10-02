@@ -3,6 +3,7 @@
 #include "exceptions/BaseException.h"
 #include "utils/ExecUtils.h"
 #include "utils/StringFormat.h"
+#include <iostream>
 
 #include "loguru.h"
 
@@ -38,8 +39,11 @@ BaseForkTask::BaseForkTask(std::string processName,
 
 ExecUtils::ExecutionResult BaseForkTask::run() {
     LOG_S(INFO) << "before calling grpc prefork";
+    std::cout << std::unitbuf;
+    std::cout << "before calling grpc prefork";
     grpc_prefork();
     LOG_S(INFO) << "after calling grpc prefork";
+    std::cout << "after calling grpc prefork";
     switch (pid = fork()) {
         case -1: {
             auto message = processName + " fork failed.";
