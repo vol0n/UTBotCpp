@@ -86,6 +86,8 @@ jobs:
         run: |
           export VERSION=$(date '+%Y.%m').$GITHUB_RUN_NUMBER
           export RUN_INFO=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          export GRPC_VERBOSITY=debug
+          export GRPC_TRACE=api
           chmod +x docker/action-scripts/build-utbot.sh
           ./docker/action-scripts/build-utbot.sh
       - name: Run Integration Tests
