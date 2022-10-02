@@ -41,7 +41,6 @@ ExecUtils::ExecutionResult BaseForkTask::run() {
     LOG_S(INFO) << "before calling grpc prefork";
     std::cout << std::unitbuf;
     std::cout << "before calling grpc prefork";
-    grpc_prefork();
     LOG_S(INFO) << "after calling grpc prefork";
     std::cout << "after calling grpc prefork";
     switch (pid = fork()) {
@@ -52,7 +51,6 @@ ExecUtils::ExecutionResult BaseForkTask::run() {
         }
         case 0: {
             LOG_S(INFO) << "before calling grpc post fork child";
-            grpc_postfork_child();
             LOG_S(INFO) << "after calling grpc post fork child";
             int pgidStatus = setpgid(pid, pid);
             // This is child process
@@ -69,7 +67,6 @@ ExecUtils::ExecutionResult BaseForkTask::run() {
         }
         default: {
             LOG_S(INFO) << "Before calling grpc post fork parent";
-            grpc_postfork_parent();
             // This is parent process
             LOG_S(INFO) << "Running " << processName << " out of process from pid: " << getpid();
             initMessage();
