@@ -40,9 +40,11 @@ BaseForkTask::BaseForkTask(std::string processName,
 ExecUtils::ExecutionResult BaseForkTask::run() {
     LOG_S(INFO) << "before calling grpc prefork";
     std::cout << std::unitbuf;
-    std::cout << "before calling grpc prefork";
+    std::cout << "before calling grpc prefork" << std::endl;
+    grpc_prefork();
     LOG_S(INFO) << "after calling grpc prefork";
-    std::cout << "after calling grpc prefork";
+    std::cout << "after calling grpc prefork" << std::endl;
+    std::cout.flush();
     switch (pid = fork()) {
         case -1: {
             auto message = processName + " fork failed.";
