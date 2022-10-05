@@ -113,7 +113,7 @@ jobs:
           path: |
             /github/home/logs
             clion-plugin/build/reports/tests/**/*
-            server_output.log
+            *.log
 
   build-utbot-and-generate-test:
     needs: matrix-prep
