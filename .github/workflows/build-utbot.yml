@@ -113,7 +113,8 @@ jobs:
           path: |
             /github/home/logs
             clion-plugin/build/reports/tests/**/*
-            *.log
+            vscode_server_output.log
+            server_output.log
 
   build-utbot-and-generate-test:
     needs: matrix-prep
