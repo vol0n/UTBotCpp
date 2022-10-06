@@ -43,6 +43,7 @@ const std::string Server::logPrefix = "logTo";
 const std::string Server::gtestLogPrefix = "gtestLogTo";
 
 void Server::run(uint16_t customPort) {
+    loguru::g_stderr_verbosity = loguru::Verbosity_WARNING;
     LOG_S(INFO) << "UnitTestBot Server, build " << UTBOT_BUILD_VERSION;
     LOG_S(INFO) << "Logs directory: " << Paths::logPath;
     LOG_S(INFO) << "Latest log path: " << Paths::getUtbotLogAllFilePath();
