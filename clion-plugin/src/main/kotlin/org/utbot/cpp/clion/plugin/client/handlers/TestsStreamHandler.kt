@@ -57,7 +57,6 @@ class TestsStreamHandler(
         // tell ide to refresh vfs and refresh project tree
         markDirtyAndRefresh(project.nioPath)
     }
-
     private fun handleSarifReport(sarif: SourceCode) {
         backupPreviousClientSarifReport(sarif.localPath)
         createSourceCodeFiles(listOf(sarif), "sarif report")
