@@ -68,7 +68,6 @@ class TestsStreamHandler(
         if (project.settings.isRemoteScenario) {
             createSourceCodeFiles(sources, "test")
         }
-
         // prepare list of generated test files for further processing
         myGeneratedTestFilesLocalFS.addAll(sources.map { it.localPath })
 
