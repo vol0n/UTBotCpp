@@ -1,15 +1,17 @@
-package org.utbot.cpp.clion.plugin.ui.targetsToolWindow
+package org.utbot.cpp.clion.plugin.ui.utbotToolWindow.targetToolWindow
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.CollectionListModel
+import org.utbot.cpp.clion.plugin.client.ManagedClient
 import org.utbot.cpp.clion.plugin.client.requests.ProjectTargetsRequest
-import org.utbot.cpp.clion.plugin.grpc.getProjectTargetsGrpcRequest
+import org.utbot.cpp.clion.plugin.grpc.GrpcRequestBuilderFactory
 import org.utbot.cpp.clion.plugin.listeners.ConnectionStatus
 import org.utbot.cpp.clion.plugin.listeners.UTBotEventsListener
 import org.utbot.cpp.clion.plugin.settings.UTBotAllProjectSettings
 import org.utbot.cpp.clion.plugin.settings.settings
-import org.utbot.cpp.clion.plugin.utils.getCurrentClient
 import org.utbot.cpp.clion.plugin.utils.invokeOnEdt
 import org.utbot.cpp.clion.plugin.utils.logger
 import org.utbot.cpp.clion.plugin.utils.projectLifetimeDisposable
@@ -30,23 +32,23 @@ class UTBotTargetsController(val project: Project) {
         get() = targetsUiModel.toList()
 
     init {
-        // requestTargetsFromServer()
         connectToEvents()
     }
 
     fun isTargetUpToDate(path: String): Boolean = areTargetsUpToDate && targets.find { it.path == path } != null
 
     fun requestTargetsFromServer() {
-        val currentClient = project.getCurrentClient()
+        invokeOnEdt { requestTargetsEdt() }
+    }
+
+    private fun requestTargetsEdt() {
         areTargetsUpToDate = false
 
-        invokeOnEdt {
-            targetsUiModel.removeAll()
-            targetsToolWindow.setBusy(true)
-        }
+        targetsUiModel.removeAll()
+        targetsToolWindow.setBusy(true)
         ProjectTargetsRequest(
+            GrpcRequestBuilderFactory(project).createProjectTargetsRequestBuilder(),
             project,
-            getProjectTargetsGrpcRequest(project),
             processTargets = { targetsResponse: Testgen.ProjectTargetsResponse ->
                 project.logger.info { "Handling project targets response!: $targetsResponse" }
                 invokeOnEdt {
@@ -81,15 +83,16 @@ class UTBotTargetsController(val project: Project) {
                     targetsToolWindow.setBusy(false)
                 }
             }).let { targetsRequest ->
-            if (!currentClient.isServerAvailable()) {
+            val client = project.service<ManagedClient>()
+
+            if (!client.isServerAvailable()) {
                 logger.error { "Could not request targets from server: server is unavailable!" }
-                invokeOnEdt {
-                    targetsToolWindow.setBusy(false)
-                }
+                targetsToolWindow.setBusy(false)
                 return
             }
+
             logger.trace { "Requesting project targets from server!" }
-            currentClient.executeRequestIfNotDisposed(targetsRequest)
+            client.executeRequest(targetsRequest)
         }
     }
 
@@ -112,7 +115,9 @@ class UTBotTargetsController(val project: Project) {
             object : UTBotEventsListener {
                 override fun onConnectionChange(oldStatus: ConnectionStatus, newStatus: ConnectionStatus) {
                     if (newStatus != oldStatus) {
-                        requestTargetsFromServer()
+                        // todo: remove this, when ci is fixed
+                        if (!ApplicationManager.getApplication().isUnitTestMode)
+                            invokeOnEdt(::requestTargetsFromServer)
                     }
                 }
             }

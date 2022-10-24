@@ -266,8 +266,7 @@ Status Server::TestsGenServiceImpl::ProcessBaseTestRequest(BaseTestGen &testGen,
         Linker linker{testGen, stubGen, lineInfo, generator};
         linker.prepareArtifacts();
         auto testMethods = linker.getTestMethods();
-        KleeRunner kleeRunner{testGen.projectContext, testGen.settingsContext,
-                              testGen.serverBuildDir};
+        KleeRunner kleeRunner{testGen.projectContext, testGen.settingsContext};
         bool interactiveMode = (dynamic_cast<ProjectTestGen *>(&testGen) != nullptr);
         auto generationStartTime = std::chrono::steady_clock::now();
         StatsUtils::TestsGenerationStatsFileMap generationStatsMap(testGen.projectContext,
@@ -424,7 +423,7 @@ Status Server::TestsGenServiceImpl::provideLoggingCallbacks(
          */
         using namespace std::chrono_literals;
         while (holdLockFlag[callbackName].exchange(true, std::memory_order_acquire)) {
-            std::this_thread::sleep_for(100ms);
+            std::this_thread::sleep_for(1ms);
         }
         loguru::remove_callback(callbackName.c_str());
         if (openFiles) {
@@ -579,7 +578,7 @@ Status Server::TestsGenServiceImpl::PrintModulesContent(ServerContext *context,
     MEASURE_FUNCTION_EXECUTION_TIME
 
     utbot::ProjectContext projectContext{*request};
-    fs::path serverBuildDir = Paths::getUtbotBuildDir(projectContext);
+    fs::path serverBuildDir = Paths::getUTBotBuildDir(projectContext);
     std::shared_ptr<ProjectBuildDatabase> buildDatabase = std::make_shared<ProjectBuildDatabase>(projectContext);
     StubSourcesFinder(buildDatabase).printAllModules();
     return Status::OK;

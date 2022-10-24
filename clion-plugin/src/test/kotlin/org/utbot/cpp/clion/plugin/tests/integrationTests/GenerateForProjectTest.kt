@@ -1,4 +1,4 @@
-package org.utbot.cpp.clion.plugin.tests
+package org.utbot.cpp.clion.plugin.tests.integrationTests
 
 import com.intellij.openapi.components.service
 import org.junit.jupiter.api.Disabled
@@ -12,12 +12,13 @@ import org.utbot.cpp.clion.plugin.actions.generate.GenerateForProjectAction
 import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
 import org.utbot.cpp.clion.plugin.settings.settings
-import org.utbot.cpp.clion.plugin.ui.targetsToolWindow.UTBotTargetsController
+import org.utbot.cpp.clion.plugin.ui.utbotToolWindow.targetToolWindow.UTBotTargetsController
 
 @Disabled
+@Disabled("Disabled as a flaky test until #483 is fixed")
 class GenerateForProjectTest : BaseGenerationTestCase() {
     private fun doTest(compiler: CppCompiler, isVerbose: Boolean, targetNames: List<String> = emptyList()) {
-        Logger.info ( "Testing generate for project with ${compiler.name}, verbose mode: $isVerbose, and targets: ${targetNames.joinToString()}")
+        Logger.info("Testing generate for project with ${compiler.name}, verbose mode: $isVerbose, and targets: ${targetNames.joinToString()}")
 
         project.settings.storedSettings.verbose = isVerbose
         compiler.buildProject(projectPath, buildDirName)

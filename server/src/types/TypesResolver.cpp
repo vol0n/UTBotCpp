@@ -121,16 +121,15 @@ void TypesResolver::resolveStructEx(const clang::RecordDecl *D, const std::strin
        << "\tFile path: " << structInfo.filePath.string() << "";
     std::vector<types::Field> fields;
 
-    structInfo.longestFieldIndexForUnionInit = SIZE_MAX;
-    size_t i = 0;
-    size_t maxFieldSize = 0;
     for (const clang::FieldDecl *F : D->fields()) {
         if (F->isUnnamedBitfield()) {
             continue;
         }
-        structInfo.hasAnonymousStructOrUnion |= F->isAnonymousStructOrUnion();
         types::Field field;
+        field.anonymous = F->isAnonymousStructOrUnion();
         field.name = F->getNameAsString();
+        structInfo.hasAnonymousStructOrUnion |= field.anonymous;
+
         const clang::QualType paramType = F->getType().getCanonicalType();
         field.type = types::Type(paramType, paramType.getAsString(), sourceManager);
         if (field.type.isPointerToFunction()) {
@@ -138,7 +137,9 @@ void TypesResolver::resolveStructEx(const clang::RecordDecl *D, const std::strin
                 F->getFunctionType(), field.name, sourceManager,
                 field.type.isArrayOfPointersToFunction());
             auto returnType = F->getFunctionType()->getReturnType();
-            if (returnType->isPointerType() && returnType->getPointeeType()->isStructureType()) {
+            if (returnType->isPointerType()
+                && returnType->getPointeeType()->isStructureType()
+                && returnType->getPointeeType().getBaseTypeIdentifier()) {
                 std::string structName =
                     returnType->getPointeeType().getBaseTypeIdentifier()->getName().str();
                 if (!CollectionUtils::containsKey((*parent->structsDeclared).at(sourceFilePath),
@@ -175,11 +176,6 @@ void TypesResolver::resolveStructEx(const clang::RecordDecl *D, const std::strin
             field.accessSpecifier = types::Field::AS_pubic;
         }
         fields.push_back(field);
-        if (subType == types::SubType::Union && maxFieldSize < field.size) {
-            structInfo.longestFieldIndexForUnionInit = i;
-            maxFieldSize = field.size;
-        }
-        ++i;
     }
     structInfo.fields = fields;
     structInfo.size = getRecordSize(D);
@@ -230,7 +226,7 @@ void TypesResolver::resolveEnum(const clang::EnumDecl *EN, const std::string &na
     enumInfo.filePath = Paths::getCCJsonFileFullPath(
         sourceManager.getFilename(EN->getLocation()).str(), parent->buildRootPath.string());
     clang::QualType promotionType = EN->getPromotionType();
-    enumInfo.size = context.getTypeSize(promotionType) / 8;
+    enumInfo.size = context.getTypeSize(promotionType);
 
     enumInfo.access = getAccess(EN);
 

@@ -1,4 +1,4 @@
-package org.utbot.cpp.clion.plugin.tests
+package org.utbot.cpp.clion.plugin.tests.integrationTests
 
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test

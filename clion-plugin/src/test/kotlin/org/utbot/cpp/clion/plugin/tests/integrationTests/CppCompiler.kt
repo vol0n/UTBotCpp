@@ -1,4 +1,4 @@
-package org.utbot.cpp.clion.plugin
+package org.utbot.cpp.clion.plugin.tests.integrationTests
 
 import org.tinylog.kotlin.Logger
 import java.nio.file.Path

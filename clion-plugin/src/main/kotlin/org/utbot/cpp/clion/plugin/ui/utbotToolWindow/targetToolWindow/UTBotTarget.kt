@@ -1,4 +1,4 @@
-package org.utbot.cpp.clion.plugin.ui.targetsToolWindow
+package org.utbot.cpp.clion.plugin.ui.utbotToolWindow.targetToolWindow
 
 import com.intellij.openapi.project.Project
 import org.utbot.cpp.clion.plugin.utils.convertFromRemotePathIfNeeded
@@ -21,5 +21,7 @@ data class UTBotTarget(val path: String, val name: String, val description: Stri
             name = "UTBot: auto",
             description = "Finds any target that contains the code under test"
         )
+
+        fun isAutoTargetPath(path: String): Boolean = autoTarget.path == path
     }
 }

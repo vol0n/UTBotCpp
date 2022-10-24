@@ -252,7 +252,7 @@ std::shared_ptr<StructValueView> KTestObjectParser::structView(const std::vector
                                                                size_t offsetInBits,
                                                                types::PointerUsage usage) {
     std::vector<InitReference> tmpInitReferences;
-    return structView(byteArray, curStruct, offsetInBits, usage, {}, "", {}, tmpInitReferences);
+    return structView(byteArray, curStruct, offsetInBits, usage, {}, false, "", {}, tmpInitReferences);
 }
 
 std::shared_ptr<StructValueView> KTestObjectParser::structView(const std::vector<char> &byteArray,
@@ -260,25 +260,73 @@ std::shared_ptr<StructValueView> KTestObjectParser::structView(const std::vector
                                                                size_t offsetInBits,
                                                                PointerUsage usage,
                                                                const std::optional<const Tests::MethodDescription> &testingMethod,
+                                                               const bool anonymousField,
                                                                const std::string &name,
                                                                const MapAddressName &fromAddressToName,
                                                                std::vector<InitReference> &initReferences) {
     std::vector<std::shared_ptr<AbstractValueView>> subViews;
 
+    size_t fieldIndexToInitUnion = SIZE_MAX;
+    size_t sizeOfFieldToInitUnion = 0;
+    size_t prevFieldEndOffset = offsetInBits;
+    size_t structEndOffset = offsetInBits + curStruct.size;
+    size_t fieldIndex = 0;
+    bool dirtyInitializedStruct = false;
     for (const auto &field: curStruct.fields) {
+        bool dirtyInitializedField = false;
         size_t fieldLen = typesHandler.typeSize(field.type);
-        size_t fieldOffset = offsetInBits + field.offset;
+        size_t fieldStartOffset = offsetInBits + field.offset;
+        size_t fieldEndOffset = fieldStartOffset + fieldLen;
+        if (curStruct.subType == types::SubType::Union) {
+            prevFieldEndOffset = offsetInBits;
+        }
+
+        auto dirtyCheck = [&](int i) {
+            if (i >= byteArray.size()) {
+                LOG_S(ERROR) << "Bad type size info: " << field.name << " index: " << fieldIndex;
+            } else if (byteArray[i] == 0) {
+                return false;
+            }
+            // the field cannot init the union in this state
+            dirtyInitializedField = true;
+            return true;
+        };
+
+        if (prevFieldEndOffset < fieldStartOffset) {
+            // check an alignment gap
+            for (int i = prevFieldEndOffset/8; i < fieldStartOffset/8; ++i) {
+                if (dirtyCheck(i)) {
+                    break;
+                }
+            }
+        }
+        if (!dirtyInitializedField && curStruct.subType == types::SubType::Union) {
+            // check the rest of the union
+            for (int i = fieldEndOffset/8; i < structEndOffset/8; ++i) {
+                if (dirtyCheck(i)) {
+                    break;
+                }
+            }
+        }
 
         switch (typesHandler.getTypeKind(field.type)) {
             case TypeKind::STRUCT_LIKE:
-                subViews.push_back(structView(byteArray, typesHandler.getStructInfo(field.type), fieldOffset, usage, testingMethod,
-                                              PrinterUtils::getFieldAccess(name, field), fromAddressToName, initReferences));
+                {
+                    auto sv = structView(byteArray, typesHandler.getStructInfo(field.type),
+                                         fieldStartOffset, usage, testingMethod, field.anonymous,
+                                         PrinterUtils::getFieldAccess(name, field), fromAddressToName,
+                                         initReferences);
+                    dirtyInitializedField |= sv->isDirtyInit();
+                    subViews.push_back(sv);
+                }
                 break;
             case TypeKind::ENUM:
-                subViews.push_back(enumView(byteArray, typesHandler.getEnumInfo(field.type), fieldOffset, fieldLen));
+                subViews.push_back(enumView(byteArray, typesHandler.getEnumInfo(field.type),
+                                            fieldStartOffset, fieldLen));
                 break;
             case TypeKind::PRIMITIVE:
-                subViews.push_back(primitiveView(byteArray, field.type.baseTypeObj(), fieldOffset,
+                subViews.push_back(primitiveView(byteArray, field.type.baseTypeObj(),
+                                                 fieldStartOffset,
                                                  std::min(field.size, fieldLen)));
                 break;
             case TypeKind::ARRAY: {
@@ -296,21 +344,22 @@ std::shared_ptr<StructValueView> KTestObjectParser::structView(const std::vector
                     }
                     if (onlyArrays) {
                         size *= typesHandler.typeSize(field.type.baseTypeObj());
-                        subViews.push_back(multiArrayView(byteArray, field.type, size,
-                                                          fieldOffset, usage));
+                        subViews.push_back(multiArrayView(byteArray, field.type, size, fieldStartOffset, usage));
                     } else {
                         std::vector<std::shared_ptr<AbstractValueView>> nullViews(
                             size, std::make_shared<JustValueView>(PrinterUtils::C_NULL));
                         subViews.push_back(std::make_shared<ArrayValueView>(nullViews));
                     }
                 } else {
-                    auto view = arrayView(byteArray, field.type.baseTypeObj(), fieldLen, fieldOffset, usage);
+                    auto view = arrayView(byteArray, field.type.baseTypeObj(), fieldLen,
+                                          fieldStartOffset, usage);
                     subViews.push_back(view);
                 }
             }
                 break;
             case TypeKind::OBJECT_POINTER: {
-                std::string res = readBytesAsValueForType(byteArray, PointerWidthType, fieldOffset,
+                std::string res = readBytesAsValueForType(byteArray, PointerWidthType,
+                                                          fieldStartOffset,
                                                           PointerWidthSizeInBits);
                 subViews.push_back(getLazyPointerView(fromAddressToName, initReferences,
                                                       PrinterUtils::getFieldAccess(name, field), res, field.type));
@@ -330,15 +379,35 @@ std::shared_ptr<StructValueView> KTestObjectParser::structView(const std::vector
                 LOG_S(ERROR) << message;
                 throw NoSuchTypeException(message);
         }
+
+        if (!dirtyInitializedField && sizeOfFieldToInitUnion < fieldLen) {
+            fieldIndexToInitUnion = fieldIndex;
+            sizeOfFieldToInitUnion = fieldLen;
+        } else {
+            dirtyInitializedStruct = true;
+        }
+        prevFieldEndOffset = fieldEndOffset;
+        ++fieldIndex;
     }
 
     std::optional<std::string> entryValue;
-    if (curStruct.hasAnonymousStructOrUnion) {
-        auto bytesType = types::Type::createSimpleTypeFromName("utbot_byte");
-        const std::shared_ptr<AbstractValueView> rawDataView = arrayView(byteArray, bytesType, curStruct.size, offsetInBits, usage);
-        entryValue = PrinterUtils::convertBytesToUnion(curStruct.name, rawDataView->getEntryValue(nullptr));
+    if (curStruct.subType == types::SubType::Union) {
+        if (fieldIndexToInitUnion == SIZE_MAX && !curStruct.name.empty()) {
+            // init by memory copy
+            entryValue = PrinterUtils::convertBytesToUnion(
+                curStruct.name,
+                arrayView(byteArray,
+                          types::Type::createSimpleTypeFromName("utbot_byte"),
+                          curStruct.size,
+                          offsetInBits, usage)->getEntryValue(nullptr));
+            dirtyInitializedStruct = false;
+        }
+        if (fieldIndexToInitUnion != SIZE_MAX) {
+            dirtyInitializedStruct = false;
+        }
     }
-    return std::make_shared<StructValueView>(curStruct, subViews, entryValue);
+    return std::make_shared<StructValueView>(curStruct, subViews, entryValue,
+                                             anonymousField, dirtyInitializedStruct, fieldIndexToInitUnion);
 }
 
 std::string KTestObjectParser::primitiveCharView(const types::Type &type, std::string value) {
@@ -668,6 +737,7 @@ void KTestObjectParser::parseTestCases(const UTBotKTestList &cases,
             std::swap(testCase.stubValuesTypes, testCaseDescription.stubValuesTypes);
             std::swap(testCase.stubValues, testCaseDescription.stubValues);
             std::swap(testCase.stdinValue, testCaseDescription.stdinValue);
+            std::swap(testCase.filesValues, testCaseDescription.filesValues);
             std::swap(testCase.objects, testCaseDescription.objects);
             std::swap(testCase.lazyAddressToName, testCaseDescription.lazyAddressToName);
             std::swap(testCase.lazyReferences, testCaseDescription.lazyReferences);
@@ -742,11 +812,11 @@ KTestObjectParser::parseTestCaseParameters(const UTBotKTest &testCases,
     return parseTestCaseParams(testCases, methodDescription, methodNameToReturnTypeMap, traceStream);
 }
 
-Tests::TestCaseDescription
-KTestObjectParser::parseTestCaseParams(const UTBotKTest &ktest,
-                                       const Tests::MethodDescription &methodDescription,
-                                       const std::unordered_map<std::string, types::Type> &methodNameToReturnTypeMap,
-                                       const std::stringstream &traceStream) {
+Tests::TestCaseDescription KTestObjectParser::parseTestCaseParams(
+    const UTBotKTest &ktest,
+    const Tests::MethodDescription &methodDescription,
+    const std::unordered_map<std::string, types::Type> &methodNameToReturnTypeMap,
+    const std::stringstream &traceStream) {
     std::vector<RawKleeParam> rawKleeParams;
     for (auto const &param : ktest.objects) {
         rawKleeParams.emplace_back(param.name, param.bytes);
@@ -757,7 +827,7 @@ KTestObjectParser::parseTestCaseParams(const UTBotKTest &ktest,
 
     for (const auto &obj : testCaseDescription.objects) {
         if (obj.name != LAZYNAME) {
-            testCaseDescription.lazyAddressToName.insert({obj.address, obj.name});
+            testCaseDescription.lazyAddressToName.insert({ obj.address, obj.name });
         }
     }
 
@@ -775,21 +845,26 @@ KTestObjectParser::parseTestCaseParams(const UTBotKTest &ktest,
         }
     }
 
-    const RawKleeParam emptyKleeParam = {"", {}};
+    const RawKleeParam emptyKleeParam = { "", {} };
 
     if (methodDescription.isClassMethod()) {
         auto methodParam = methodDescription.classObj.value();
         std::shared_ptr<AbstractValueView> testParamView;
-        getTestParamView(methodDescription, rawKleeParams, emptyKleeParam, testCaseDescription, methodParam,
-                         testParamView);
-        testCaseDescription.classPreValues = { methodParam.name, methodParam.alignment, testParamView };
+        getTestParamView(methodDescription, rawKleeParams, emptyKleeParam, testCaseDescription,
+                         methodParam, testParamView);
+        testCaseDescription.classPreValues = { methodParam.name, methodParam.alignment,
+                                               testParamView };
         processClassPostValue(testCaseDescription, methodParam, rawKleeParams);
     }
 
     for (auto &methodParam : methodDescription.params) {
         std::shared_ptr<AbstractValueView> testParamView;
-        getTestParamView(methodDescription, rawKleeParams, emptyKleeParam, testCaseDescription, methodParam,
-                         testParamView);
+        if (!methodParam.type.isFilePointer()) {
+            getTestParamView(methodDescription, rawKleeParams, emptyKleeParam, testCaseDescription,
+                             methodParam, testParamView);
+        } else {
+            testParamView = std::shared_ptr<AbstractValueView>(new JustValueView("FILE_PTR"));
+        }
         testCaseDescription.funcParamValues.emplace_back(methodParam.name, methodParam.alignment,
                                                          testParamView);
 
@@ -804,6 +879,7 @@ KTestObjectParser::parseTestCaseParams(const UTBotKTest &ktest,
 
     if (Paths::getSourceLanguage(sourceFilePath) == utbot::Language::C) {
         processSymbolicStdin(testCaseDescription, rawKleeParams);
+        processSymbolicFiles(testCaseDescription, rawKleeParams);
     }
 
     processStubParamValue(testCaseDescription, methodNameToReturnTypeMap, rawKleeParams);
@@ -870,7 +946,7 @@ void KTestObjectParser::processGlobalParamPreValue(Tests::TestCaseDescription &t
     testCaseDescription.globalPreValues.emplace_back( globalParam.name, globalParam.alignment, testParamView );
 }
 
-void KTestObjectParser::processSymbolicStdin(Tests::TestCaseDescription &testCaseDescription, std::vector<RawKleeParam> &rawKleeParams) {
+void KTestObjectParser::processSymbolicStdin(Tests::TestCaseDescription &testCaseDescription, const std::vector<RawKleeParam> &rawKleeParams) {
     auto &&read = getKleeParamOrThrow(rawKleeParams, "stdin-read");
     std::string &&view = testParameterView(read, {types::Type::longlongType(), "stdin-read"}, types::PointerUsage::PARAMETER,
                                       testCaseDescription.lazyAddressToName, testCaseDescription.lazyReferences)->getEntryValue(nullptr);
@@ -878,7 +954,7 @@ void KTestObjectParser::processSymbolicStdin(Tests::TestCaseDescription &testCas
         return;
     } else {
         long long usedStdinBytesCount = std::stoll(view);
-        if (usedStdinBytesCount > types::Type::symStdinSize) {
+        if (usedStdinBytesCount > types::Type::symInputSize) {
             std::string message = ".ktest has malformed stdin data";
             LOG_S(ERROR) << message;
             throw UnImplementedException(message);
@@ -888,6 +964,19 @@ void KTestObjectParser::processSymbolicStdin(Tests::TestCaseDescription &testCas
         testCaseDescription.stdinValue = Tests::TestCaseParamValue(types::Type::getStdinParamName(),
                                                                    std::nullopt, testParamView);
     }
+}
+
+void KTestObjectParser::processSymbolicFiles(Tests::TestCaseDescription &testCaseDescription,
+                                             const std::vector<RawKleeParam> &rawKleeParams) {
+    std::vector<Tests::TestCaseParamValue> filesValues(types::Type::symFilesCount);
+    for (char fileName = 'A'; fileName < 'A' + types::Type::symFilesCount; fileName++) {
+        auto &&fileBuffer =
+            getKleeParamOrThrow(rawKleeParams, PrinterUtils::getFileParamKTestJSON(fileName));
+        auto &&testParamView = stringLiteralView(fileBuffer.rawData, types::Type::symInputSize);
+        filesValues[fileName - 'A'] = Tests::TestCaseParamValue(
+            types::Type::getFileParamName(fileName), std::nullopt, testParamView);
+    }
+    testCaseDescription.filesValues = filesValues;
 }
 
 void KTestObjectParser::processGlobalParamPostValue(Tests::TestCaseDescription &testCaseDescription,
@@ -962,7 +1051,7 @@ std::shared_ptr<AbstractValueView> KTestObjectParser::testParameterView(
     switch (typesHandler.getTypeKind(paramType)) {
         case TypeKind::STRUCT_LIKE:
             return structView(rawData, typesHandler.getStructInfo(paramType), 0,
-                              usage, testingMethod, param.varName, fromAddressToName, initReferences);
+                              usage, testingMethod, false, param.varName, fromAddressToName, initReferences);
         case TypeKind::ENUM:
             return enumView(rawData, typesHandler.getEnumInfo(paramType), 0, SizeUtils::bytesToBits(rawData.size()));
         case TypeKind::PRIMITIVE:

@@ -13,12 +13,12 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - id: set-matrix
         name: Read config from matrix.json
         run: |
           TASKS=$(echo $(cat .github/workflows/matrix.json) | sed 's/ //g' )
-          echo "::set-output name=matrix::$TASKS"
+          echo "matrix=$TASKS" >> $GITHUB_OUTPUT
 
   build-utbot-and-run-unit-tests:
     needs: matrix-prep
@@ -39,7 +39,7 @@ jobs:
         ARTIFACT_DIR: utbot-artifact
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Build UTBot
@@ -78,7 +78,7 @@ jobs:
         ARTIFACT_DIR: utbot-artifact
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -135,7 +135,7 @@ jobs:
         ARTIFACT_DIR: utbot-artifact
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -163,7 +163,7 @@ jobs:
       PORTABLE_CONTAINER_NAME: Portable
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -186,4 +186,4 @@ jobs:
       - name: Check test portability
         run: |
           rm -r /home/runner/work/UTBotCpp/UTBotCpp/c-example/build
-          env make -f /home/runner/work/UTBotCpp/UTBotCpp/c-example/tests/lib/floats/floating_point_plain.mk run GTEST_FLAGS="--gtest_filter=*.plain_isnan_test_1" CLANG="/usr/bin/clang-10" CLANGXX="/usr/bin/clang++-10" GTEST="/gtest"
+          env make -f /home/runner/work/UTBotCpp/UTBotCpp/c-example/tests/makefiles/lib/floats/floating_point_plain.mk run GTEST_FLAGS="--gtest_filter=*.plain_isnan_test_1" CLANG="/usr/bin/clang-10" CLANGXX="/usr/bin/clang++-10" GTEST="/gtest"

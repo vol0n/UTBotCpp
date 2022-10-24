@@ -3,12 +3,14 @@ package org.utbot.cpp.clion.plugin.client.handlers
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.util.io.exists
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
 import org.utbot.cpp.clion.plugin.settings.settings
 import org.utbot.cpp.clion.plugin.ui.services.TestsResultsStorage
 import org.utbot.cpp.clion.plugin.utils.convertFromRemotePathIfNeeded
 import org.utbot.cpp.clion.plugin.utils.createFileWithText
+import org.utbot.cpp.clion.plugin.utils.invokeOnEdt
 import org.utbot.cpp.clion.plugin.utils.isSarifReport
 import org.utbot.cpp.clion.plugin.utils.logger
 import org.utbot.cpp.clion.plugin.utils.markDirtyAndRefresh
@@ -26,7 +28,6 @@ class TestsStreamHandler(
     progressName: String,
     cancellationJob: Job,
     private val onSuccess: (List<Path>) -> Unit = {},
-    private val onError: (Throwable) -> Unit = {}
 ) : StreamHandlerWithProgress<Testgen.TestsResponse>(project, grpcStream, progressName, cancellationJob) {
 
     private val myGeneratedTestFilesLocalFS: MutableList<Path> = mutableListOf()
@@ -58,6 +59,17 @@ class TestsStreamHandler(
         project.logger.info { "Asking to mark files as dirty and refresh" }
         markDirtyAndRefresh(project.nioPath)
         project.logger.info { "Request has finished!" }
+    }
+
+    override fun onCompletion(exception: Throwable?) {
+        invokeOnEdt {
+            indicator.stopShowingProgressInUI()
+        }
+        if (exception != null && exception !is CancellationException) {
+            throw exception
+        } else if (exception !is CancellationException) {
+            onSuccess(myGeneratedTestFilesLocalFS)
+        }
     }
 
     private fun handleSarifReport(sarif: SourceCode) {
@@ -122,13 +134,5 @@ class TestsStreamHandler(
             val newPath = Paths.get(previousReportPaths.parent.toString(), newReportName)
             Files.move(previousReportPaths, newPath)
         }
-    }
-
-    override fun onCompletion(exception: Throwable?) {
-        super.onCompletion(exception)
-        if (exception == null)
-            onSuccess(myGeneratedTestFilesLocalFS)
-        else
-            onError(exception)
     }
 }

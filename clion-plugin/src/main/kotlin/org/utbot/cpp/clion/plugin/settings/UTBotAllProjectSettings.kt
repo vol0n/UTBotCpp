@@ -3,39 +3,55 @@ package org.utbot.cpp.clion.plugin.settings
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
-import com.jetbrains.cidr.cpp.execution.CMakeAppRunConfiguration
+import org.utbot.cpp.clion.plugin.UTBot
+import org.utbot.cpp.clion.plugin.grpc.IllegalPathException
+import org.utbot.cpp.clion.plugin.listeners.PluginActivationListener
 import org.utbot.cpp.clion.plugin.listeners.UTBotSettingsChangedListener
-import org.utbot.cpp.clion.plugin.ui.targetsToolWindow.UTBotTarget
+import org.utbot.cpp.clion.plugin.ui.utbotToolWindow.targetToolWindow.UTBotTarget
 import org.utbot.cpp.clion.plugin.utils.convertToRemotePathIfNeeded
 import org.utbot.cpp.clion.plugin.utils.isWindows
-import org.utbot.cpp.clion.plugin.utils.notifyWarning
 import org.utbot.cpp.clion.plugin.utils.path
 import java.io.File
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import java.nio.file.Paths
 
 @Service
 class UTBotAllProjectSettings(val project: Project) {
-    val storedSettings: UTBotProjectStoredSettings.State
-        get() = project.service<UTBotProjectStoredSettings>().state
+    val storedSettings: UTBotProjectStoredSettings
+        get() = project.service<UTBotProjectStoredSettings>()
 
     val buildDirPath: Path
-        get() = Paths.get(project.path).resolve(storedSettings.buildDirRelativePath)
+        get() {
+            try {
+                return Paths.get(project.path).resolve(storedSettings.buildDirRelativePath)
+            } catch (e: InvalidPathException) {
+                throw IllegalPathException(
+                    UTBot.message(
+                        "paths.invalid",
+                        "relative path to build dir",
+                        storedSettings.buildDirRelativePath
+                    ),
+                    storedSettings.buildDirRelativePath
+                )
+            }
+        }
 
     val testsDirPath: Path
-        get() = Paths.get(project.path).resolve(storedSettings.testsDirRelativePath)
-
-    val convertedSourcePaths: List<String>
-        get() = storedSettings.sourceDirs.map { it.convertToRemotePathIfNeeded(project) }
-
-    val convertedTestDirPath: String
-        get() = testsDirPath.toString().convertToRemotePathIfNeeded(project)
-
-    val convertedTargetPath: String
-        get() = if (storedSettings.targetPath == UTBotTarget.autoTarget.path) storedSettings.targetPath
-        else storedSettings.targetPath.convertToRemotePathIfNeeded(project)
-
-    val convertedProjectPath: String get() = project.path.convertToRemotePathIfNeeded(project)
+        get() {
+            try {
+                return Paths.get(project.path).resolve(storedSettings.testDirRelativePath)
+            } catch (e: InvalidPathException) {
+                throw IllegalPathException(
+                    storedSettings.testDirRelativePath,
+                    UTBot.message(
+                        "paths.invalid",
+                        "relative path to tests dir",
+                        storedSettings.testDirRelativePath
+                    )
+                )
+            }
+        }
 
     /**
      * If this property returns true, plugin must convert path sent and returned from server.
@@ -52,14 +68,19 @@ class UTBotAllProjectSettings(val project: Project) {
 
     fun fireUTBotSettingsChanged() {
         project.messageBus.let { bus ->
-            if(!bus.isDisposed)
+            if (!bus.isDisposed)
                 bus.syncPublisher(UTBotSettingsChangedListener.TOPIC).settingsChanged(this)
         }
     }
 
-    fun predictPaths() {
-        fun getSourceFoldersFromSources(sources: Collection<File>) = sources.map { it.parent }.toMutableSet()
+    fun fireUTBotEnabledStateChanged() {
+        project.messageBus.let {
+            if (!it.isDisposed)
+                project.messageBus.syncPublisher(PluginActivationListener.TOPIC).enabledChanged(project.settings.storedSettings.isPluginEnabled)
+        }
+    }
 
+    fun predictPaths() {
         storedSettings.remotePath = UTBotProjectStoredSettings.REMOTE_PATH_VALUE_FOR_LOCAL_SCENARIO
         storedSettings.buildDirRelativePath = UTBotProjectStoredSettings.DEFAULT_RELATIVE_PATH_TO_BUILD_DIR
         storedSettings.targetPath = UTBotTarget.autoTarget.path

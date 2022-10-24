@@ -3,7 +3,6 @@ package org.utbot.cpp.clion.plugin.ui.wizard
 import com.intellij.ide.BrowserUtil
 import com.intellij.ide.wizard.AbstractWizard
 import com.intellij.openapi.project.Project
-import javax.swing.JButton
 import org.utbot.cpp.clion.plugin.UTBot
 import org.utbot.cpp.clion.plugin.settings.UTBotSettingsModel
 import org.utbot.cpp.clion.plugin.settings.projectIndependentSettings
@@ -12,18 +11,19 @@ import org.utbot.cpp.clion.plugin.ui.wizard.steps.BuildOptionsStep
 import org.utbot.cpp.clion.plugin.ui.wizard.steps.ConnectionStep
 import org.utbot.cpp.clion.plugin.ui.wizard.steps.IntroStep
 import org.utbot.cpp.clion.plugin.ui.wizard.steps.FinalStep
-import org.utbot.cpp.clion.plugin.utils.getCurrentClient
+import org.utbot.cpp.clion.plugin.utils.client
 import java.awt.event.KeyEvent
 
 class UTBotWizard(private val project: Project) : AbstractWizard<UTBotBaseWizardStep>("UTBot: Quickstart", project) {
     // copy of settings to make changes during wizard steps
-    private val mySettingsModel = UTBotSettingsModel(project.settings.storedSettings.copy(), projectIndependentSettings.copy())
+    private val mySettingsModel =
+        UTBotSettingsModel(project.settings.storedSettings.state.copy(), projectIndependentSettings.copy())
 
     init {
-        addStep(IntroStep())
-        addStep(ConnectionStep(project, mySettingsModel))
-        addStep(BuildOptionsStep(mySettingsModel))
-        addStep(FinalStep())
+        addStep(IntroStep(disposable))
+        addStep(ConnectionStep(disposable, project, mySettingsModel))
+        addStep(BuildOptionsStep(disposable, mySettingsModel))
+        addStep(FinalStep(disposable))
         super.init()
         isResizable = true
         setSize(400, 400)
@@ -34,7 +34,7 @@ class UTBotWizard(private val project: Project) : AbstractWizard<UTBotBaseWizard
      * Commits settings changes made in wizard and sends a notification.
      */
     override fun doOKAction() {
-        project.settings.storedSettings.fromSettingsModel(mySettingsModel)
+        project.settings.storedSettings.state.fromSettingsModel(mySettingsModel)
         projectIndependentSettings.fromSettingsModel(mySettingsModel)
         projectIndependentSettings.fireConnectionSettingsChanged()
 
@@ -42,7 +42,7 @@ class UTBotWizard(private val project: Project) : AbstractWizard<UTBotBaseWizard
             fireUTBotSettingsChanged()
         }
 
-        project.getCurrentClient().configureProject()
+        project.client.configureProject()
 
         super.doOKAction()
     }
@@ -55,6 +55,7 @@ class UTBotWizard(private val project: Project) : AbstractWizard<UTBotBaseWizard
             nextButton.mnemonic = KeyEvent.getExtendedKeyCodeForChar('F'.code)
         }
     }
+
 
     override fun proceedToNextStep() {
         if (currentStepObject?.canProceedToNextStep() != false) {

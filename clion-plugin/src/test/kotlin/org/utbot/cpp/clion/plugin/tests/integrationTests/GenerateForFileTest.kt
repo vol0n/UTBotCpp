@@ -1,4 +1,4 @@
-package org.utbot.cpp.clion.plugin.tests
+package org.utbot.cpp.clion.plugin.tests.integrationTests
 
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -6,6 +6,7 @@ import org.tinylog.kotlin.Logger
 import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
 import org.utbot.cpp.clion.plugin.Clang
 import org.utbot.cpp.clion.plugin.CppCompiler
+import org.tinylog.kotlin.Logger
 import org.utbot.cpp.clion.plugin.assertAllFilesNotEmptyRecursively
 import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
@@ -17,7 +18,6 @@ class GenerateForFileTest : BaseGenerationTestCase() {
         Logger.info("Testing generate for file with file: $relativeFilePath, compiler: ${compiler.name}, verboseMode: $isVerboseMode")
         compiler.buildProject(projectPath, buildDirName)
         project.settings.storedSettings.verbose = isVerboseMode
-
         fixture.configureFromTempProjectFile(relativeFilePath)
         waitForConnection()
         fixture.performEditorAction("org.utbot.cpp.clion.plugin.actions.GenerateForFileAction")
