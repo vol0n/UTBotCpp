@@ -10,6 +10,7 @@ import com.intellij.openapi.util.Disposer
 import org.utbot.cpp.clion.plugin.client.handlers.SourceCode
 import org.utbot.cpp.clion.plugin.listeners.UTBotTestResultsReceivedListener
 import org.utbot.cpp.clion.plugin.utils.convertFromRemotePathIfNeeded
+import org.utbot.cpp.clion.plugin.utils.logger
 import org.utbot.cpp.clion.plugin.utils.projectLifetimeDisposable
 import testsgen.Testgen
 import java.util.concurrent.ConcurrentHashMap

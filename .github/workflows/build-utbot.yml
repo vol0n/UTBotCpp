@@ -53,8 +53,8 @@ jobs:
         run: |
           chmod +x docker/action-scripts/unit-tests.sh
           ./docker/action-scripts/unit-tests.sh
-      - uses: actions/upload-artifact@v3
-        if: failure()
+      - uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: UTBot unit tests logs
           path: server/build/logs
@@ -86,6 +86,8 @@ jobs:
         run: |
           export VERSION=$(date '+%Y.%m').$GITHUB_RUN_NUMBER
           export RUN_INFO=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID
+          export GRPC_VERBOSITY=debug
+          export GRPC_TRACE=api
           chmod +x docker/action-scripts/build-utbot.sh
           ./docker/action-scripts/build-utbot.sh
       - name: Run Integration Tests
@@ -104,13 +106,15 @@ jobs:
           chmod +x docker/action-scripts/runClionIntegrationTests.sh 
           ./docker/action-scripts/runClionIntegrationTests.sh
       - name: Upload logs
-        uses: actions/upload-artifact@v3
-        if: failure()
+        uses: actions/upload-artifact@v2
+        if: always()
         with:
           name: test-report
           path: |
             /github/home/logs
             clion-plugin/build/reports/tests/**/*
+            vscode_server_output.log
+            server_output.log
 
   build-utbot-and-generate-test:
     needs: matrix-prep

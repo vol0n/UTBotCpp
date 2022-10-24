@@ -1,5 +1,6 @@
 package org.utbot.cpp.clion.plugin.client.logger
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.project.Project
@@ -40,7 +41,13 @@ class ClientLogger(project: Project) : Disposable, Logger {
             field = value
         }
 
-    val logWriters: MutableList<LogWriter> = mutableListOf(ConsoleWriter(project))
+    private val logWriters: MutableList<LogWriter> = init(project)
+
+    private fun init(project: Project): MutableList<LogWriter> {
+        return if (ApplicationManager.getApplication().isUnitTestMode) {
+            mutableListOf(SystemWriter())
+        } else mutableListOf(ConsoleWriter(project))
+    }
 
     override fun log(messageSupplier: () -> (String), level: LogLevel, depth: Int) {
         if (level.ordinal < this.level.ordinal) {

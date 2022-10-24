@@ -4,12 +4,17 @@ import com.intellij.openapi.components.service
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.tinylog.kotlin.Logger
+import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
+import org.utbot.cpp.clion.plugin.Clang
+import org.utbot.cpp.clion.plugin.CppCompiler
+import org.utbot.cpp.clion.plugin.Gcc
 import org.utbot.cpp.clion.plugin.actions.generate.GenerateForProjectAction
 import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
 import org.utbot.cpp.clion.plugin.settings.settings
 import org.utbot.cpp.clion.plugin.ui.utbotToolWindow.targetToolWindow.UTBotTargetsController
 
+@Disabled
 @Disabled("Disabled as a flaky test until #483 is fixed")
 class GenerateForProjectTest : BaseGenerationTestCase() {
     private fun doTest(compiler: CppCompiler, isVerbose: Boolean, targetNames: List<String> = emptyList()) {
@@ -33,22 +38,25 @@ class GenerateForProjectTest : BaseGenerationTestCase() {
     }
 
     private fun generateForProject() {
+        Logger.info { "Invoking action to generate tests for project!" }
         fixture.testAction(GenerateForProjectAction())
+        Logger.info { "Started waiting for project request!" }
         waitForRequestsToFinish()
+        Logger.info { "Finished waiting for project request!"}
     }
 
     @Test
     fun `test generate for project with clang, non-verbose mode, targets - all`() {
-        doTest(Clang, false, project.service<UTBotTargetsController>().targets.map { it.name })
+        doTest(Clang(), false, project.service<UTBotTargetsController>().targets.map { it.name })
     }
 
     @Test
     fun `test generate for project with clang, verbose mode`() {
-        doTest(Clang, true, emptyList())
+        doTest(Clang(), true, emptyList())
     }
 
     @Test
     fun `test generate for project with gcc, non-verbose mode`() {
-        doTest(Gcc, false, emptyList())
+        doTest(Gcc(), false, emptyList())
     }
 }

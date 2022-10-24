@@ -61,22 +61,30 @@ fs::path BuildDatabase::createExplicitObjectFileCompilationCommand(const std::sh
 }
 
 void BuildDatabase::createClangCompileCommandsJson() {
+    LOG_S(INFO) << "In createClangCompileCommandsJson";
     CollectionUtils::MapFileTo<nlohmann::json> fileCompileCommands;
+    LOG_S(INFO) << "after map decl";
     for (const auto &[sourcePath, objectInfos]: sourceFileInfos) {
+        LOG_S(INFO) << "in for: sourcePath: " << sourcePath;
         const std::shared_ptr<ObjectFileInfo> &objectInfo = objectInfos.front();
         fileCompileCommands[sourcePath] = {{"directory", objectInfo->command.getDirectory()},
                                            {"command",   objectInfo->command.toString()},
                                            {"file",      objectInfo->command.getSourcePath()}};
     }
+    LOG_S(INFO) << "After for";
 
     nlohmann::json compileCommandsSingleFilesJson;
     for (const auto &compileCommand: fileCompileCommands) {
         compileCommandsSingleFilesJson.push_back(compileCommand.second);
     }
+    LOG_S(INFO) << "After second for";
 
     fs::path clangCompileCommandsJsonPath = CompilationUtils::getClangCompileCommandsJsonPath(buildCommandsJsonPath);
+    LOG_S(INFO) << "After geeing json path";
     JsonUtils::writeJsonToFile(clangCompileCommandsJsonPath, compileCommandsSingleFilesJson);
+    LOG_S(INFO) << "After writing json to file";
     compilationDatabase = CompilationUtils::getCompilationDatabase(clangCompileCommandsJsonPath);
+    LOG_S(INFO) << "After getting cdb";
 }
 
 void BuildDatabase::mergeLibraryOptions(std::vector<std::string> &jsonArguments) const {

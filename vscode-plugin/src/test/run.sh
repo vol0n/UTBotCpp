@@ -14,7 +14,9 @@ echo "VSCODE_VERSION_DIR=$VSCODE_VERSION_DIR"
 export DISPLAY=':99.0'
 Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
 
-$PROJECT_DIR/server/build/utbot server > /dev/null 2>&1 &
+export GRPC_VERBOSITY=debug
+export GRPC_TRACE=api
+$PROJECT_DIR/server/build/utbot server &> $PROJECT_DIR/vscode_server_output.log &
 
 #Executing the test suite
 #TODO: fetch workspace folders automatically from .vscode/launch.json
@@ -22,3 +24,6 @@ $VSCODE_VERSION_DIR/VSCode-linux-x64/code $PROJECT_DIR/integration-tests/c-examp
   --extensionDevelopmentPath=$PROJECT_DIR/vscode-plugin \
   --extensionTestsPath=$PROJECT_DIR/vscode-plugin/out/test/suite/index \
   --no-sandbox
+
+echo "killin utbot process"
+pkill utbot

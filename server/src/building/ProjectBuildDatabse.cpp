@@ -41,14 +41,24 @@ ProjectBuildDatabase::ProjectBuildDatabase(fs::path _buildCommandsJsonPath,
     }
 
     try {
-        auto linkCommandsJson = JsonUtils::getJsonFromFile(linkCommandsJsonPath);
-        auto compileCommandsJson = JsonUtils::getJsonFromFile(compileCommandsJsonPath);
-        initObjects(compileCommandsJson);
-        initInfo(linkCommandsJson);
-        filterInstalledFiles();
-        addLocalSharedLibraries();
-        fillTargetInfoParents();
-        createClangCompileCommandsJson();
+    LOG_S(INFO) << "Getting json from a file";
+    auto linkCommandsJson = JsonUtils::getJsonFromFile(linkCommandsJsonPath);
+    auto compileCommandsJson = JsonUtils::getJsonFromFile(compileCommandsJsonPath);
+    LOG_S(INFO) << "Finished getting json";
+
+    LOG_S(INFO) << "Call init objects from compile commands";
+    initObjects(compileCommandsJson);
+    LOG_S(INFO) << "Call init info from link commands";
+    initInfo(linkCommandsJson);
+    LOG_S(INFO) << "Call filter installed files";
+    filterInstalledFiles();
+    LOG_S(INFO) << "add Local shared libs";
+    addLocalSharedLibraries();
+    LOG_S(INFO) << "fill target info parents";
+    fillTargetInfoParents();
+    LOG_S(INFO) << "create clang compile commands json";
+    createClangCompileCommandsJson();
+    LOG_S(INFO) << "create clang compile commands json finished";
     } catch (const std::exception &e) {
         return;
     }

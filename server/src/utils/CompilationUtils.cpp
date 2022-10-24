@@ -14,14 +14,18 @@
 namespace CompilationUtils {
     std::shared_ptr<CompilationDatabase>
     getCompilationDatabase(const fs::path &buildCommandsJsonPath) {
+        LOG_S(INFO) << "getCompilationDatabase is called: " << buildCommandsJsonPath;
         fs::path clangCompileCommandsJsonPath =
             getClangCompileCommandsJsonPath(buildCommandsJsonPath);
+        LOG_S(INFO) << "getClangCompileCommands json path";
         std::string errorMessage;
         auto compilationDatabase = CompilationDatabase::autoDetectFromDirectory(
             clangCompileCommandsJsonPath.string(), errorMessage);
+        LOG_S(INFO) << "after auto detect from directory";
         if (!errorMessage.empty()) {
             throw CompilationDatabaseException(errorMessage);
         }
+        LOG_S(INFO) << "Before returning";
         return compilationDatabase;
     }
 
@@ -178,13 +182,17 @@ namespace CompilationUtils {
     }
 
     std::optional<fs::path> getResourceDirectory(const fs::path &buildCompilerPath) {
+        LOG_S(INFO) << "in getResourceDirectory";
         auto compilerName = CompilationUtils::getCompilerName(buildCompilerPath);
+        LOG_S(INFO) << "after gettingCompilerName: ";
         switch (compilerName) {
         case CompilerName::GCC:
         case CompilerName::GXX: {
             // /usr/bin/gcc -> /usr/lib/gcc/x86_64-linux-gnu/9/libgcc.a
             std::string command = StringUtils::stringFormat("%s -print-libgcc-file-name", buildCompilerPath);
+            LOG_S(INFO) << "command: " << command;
             auto [output, status, outPath] = ShellExecTask::runPlainShellCommand(command);
+            LOG_S(INFO) << "after running shell task";
             if (status == 0) {
                 StringUtils::rtrim(output);
                 // /usr/lib/gcc/x86_64-linux-gnu/9/libgcc.a -> /usr/lib/gcc/x86_64-linux-gnu/9
@@ -192,7 +200,7 @@ namespace CompilationUtils {
                 if (fs::exists(resourceDirPath)) {
                     return resourceDirPath;
                 } else {
-                    LOG_S(ERROR) << "Resource directory doesn't exist: " << resourceDirPath;
+                    LOG_S(ERROR) << "Resource directory doesn't exist: " << resourceDirPath.string();
                     return std::nullopt;
                 }
             } else {
@@ -206,7 +214,9 @@ namespace CompilationUtils {
         case CompilerName::CLANGXX: {
             // /utbot_distr/install/bin/clang -> /utbot_distr/install/lib/clang/10.0.1
             std::string command = StringUtils::stringFormat("%s -print-resource-dir", buildCompilerPath);
+            LOG_S(INFO) << "command: " << command;
             auto [output, status, outPath] = ShellExecTask::runPlainShellCommand(command);
+            LOG_S(INFO) << "after running shell task";
             if (status == 0) {
                 StringUtils::rtrim(output);
                 fs::path resourceDirPath = output;

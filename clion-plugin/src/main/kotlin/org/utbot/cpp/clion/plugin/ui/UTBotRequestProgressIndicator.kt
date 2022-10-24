@@ -36,7 +36,8 @@ class UTBotRequestProgressIndicator(
     fun stopShowingProgressInUI() {
         // stop can be called only if progress was started (=running)
         finish()
-        super.stop()
+        if (isRunning())
+            super.stop()
     }
 
     fun finish() {

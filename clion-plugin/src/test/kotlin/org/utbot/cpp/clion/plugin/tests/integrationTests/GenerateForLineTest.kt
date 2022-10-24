@@ -3,6 +3,11 @@ package org.utbot.cpp.clion.plugin.tests.integrationTests
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 import org.tinylog.kotlin.Logger
+import org.tinylog.kotlin.Logger
+import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
+import org.utbot.cpp.clion.plugin.Clang
+import org.utbot.cpp.clion.plugin.CppCompiler
+import org.utbot.cpp.clion.plugin.Gcc
 import org.utbot.cpp.clion.plugin.assertAllFilesNotEmptyRecursively
 import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
@@ -11,7 +16,7 @@ import org.utbot.cpp.clion.plugin.settings.settings
 
 @Disabled("Disabled as a flaky test until #483 is fixed")
 class GenerateForLineTest: BaseGenerationTestCase() {
-    fun doTest(lineNumber: Int, targetName: String = "liblib.a", compiler: CppCompiler = Clang, isVerbose: Boolean = true) {
+    fun doTest(lineNumber: Int, targetName: String = "liblib.a", compiler: CppCompiler = Clang(), isVerbose: Boolean = true) {
         Logger.info("Testing generate for line using target: $targetName, compiler: ${compiler.name}, verbose mode: $isVerbose, line: $lineNumber")
         compiler.buildProject(projectPath, buildDirName)
         waitForConnection()
@@ -21,6 +26,7 @@ class GenerateForLineTest: BaseGenerationTestCase() {
         fixture.configureFromTempProjectFile("/lib/basic_functions.c")
         fixture.editor.moveCursorToLine(lineNumber)
 
+        waitForConnection()
         fixture.performEditorAction("org.utbot.cpp.clion.plugin.actions.GenerateForLineAction")
         waitForRequestsToFinish()
 
@@ -41,7 +47,7 @@ class GenerateForLineTest: BaseGenerationTestCase() {
 
     @Test
     fun `test generate for line if in max function line with gcc`() {
-        doTest(IF_IN_MAX_FUNCTION_LINE, compiler = Gcc)
+        doTest(IF_IN_MAX_FUNCTION_LINE, compiler = Gcc())
     }
 
     companion object {

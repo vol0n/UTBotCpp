@@ -43,6 +43,7 @@ const std::string Server::logPrefix = "logTo";
 const std::string Server::gtestLogPrefix = "gtestLogTo";
 
 void Server::run(uint16_t customPort) {
+    loguru::g_stderr_verbosity = loguru::Verbosity_INFO;
     LOG_S(INFO) << "UnitTestBot Server, build " << UTBOT_BUILD_VERSION;
     LOG_S(INFO) << "Logs directory: " << Paths::logPath;
     LOG_S(INFO) << "Latest log path: " << Paths::getUtbotLogAllFilePath();
@@ -653,15 +654,32 @@ Status Server::TestsGenServiceImpl::GetProjectTargets(ServerContext *context,
 
     try {
         utbot::ProjectContext projectContext{request->projectcontext()};
+        LOG_S(INFO) << "Creating shared pointer to project build database";
         auto buildDatabase = std::make_shared<ProjectBuildDatabase>(projectContext);
+        LOG_S(INFO) << "created ProjectBuildDatabase";
         std::vector<fs::path> targets = buildDatabase->getAllTargetPaths();
+        LOG_S(INFO) << "got all targets: " << StringUtils::joinWith(targets, " ");
         ProjectTargetsWriter targetsWriter(response);
+        LOG_S(INFO) << "created targetsWriter";
         targetsWriter.writeResponse(projectContext, targets);
+        LOG_S(INFO) << "after writing response!";
     } catch (CompilationDatabaseException const &e) {
         return failedToLoadCDbStatus(e);
+    } catch (BaseException const &e) {
+        LOG_S(INFO) << e.what() << NL;
+        return Status(StatusCode::INTERNAL, e.what());
+    } catch (std::exception &e) {
+        LOG_S(INFO) << e.what() << NL;
+
+        return Status(StatusCode::INTERNAL, e.what());
+    } catch (...) {
+        std::exception_ptr p = std::current_exception();
+        LOG_S(INFO) << (p ? p.__cxa_exception_type()->name() : "null") << NL;
+        return Status(StatusCode::INTERNAL, "");
     }
     return Status::OK;
 }
+
 
 Status Server::TestsGenServiceImpl::GetFileTargets(ServerContext *context,
                                                    const FileTargetsRequest *request,
@@ -688,7 +706,7 @@ Status Server::TestsGenServiceImpl::GetFileTargets(ServerContext *context,
 
 RequestLockMutex &Server::TestsGenServiceImpl::getLock() {
     std::string const &client = RequestEnvironment::getClientId();
-    auto[iterator, inserted] = locks.try_emplace(client);
+    auto [iterator, inserted] = locks.try_emplace(client);
     return iterator->second;
 }
 

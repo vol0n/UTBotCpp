@@ -41,6 +41,9 @@ class Client(
     private val project: Project
 ) : Disposable,
     GrpcClient(projectIndependentSettings.port, projectIndependentSettings.serverName, clientId) {
+    init {
+        System.err.println("CLient constructor is called!")
+    }
     var connectionStatus = ConnectionStatus.INIT
         private set
 
@@ -217,6 +220,7 @@ class Client(
     ) {
         runBlocking {
             withTimeout(timeout) {
+                logger.info { "Started waiting for requests to finish!\n Unfinished: ${requestsCS.coroutineContext.job.children.toList()} " }
                 while (requestsCS.coroutineContext.job.children.toList().any()) {
                     ifNotFinished(requestsCS.coroutineContext.job.children.toList())
                     delay(delayTime)

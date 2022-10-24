@@ -1,12 +1,18 @@
 package org.utbot.cpp.clion.plugin.tests.integrationTests
 
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import org.tinylog.kotlin.Logger
+import org.utbot.cpp.clion.plugin.BaseGenerationTestCase
+import org.utbot.cpp.clion.plugin.Clang
+import org.utbot.cpp.clion.plugin.CppCompiler
 import org.tinylog.kotlin.Logger
 import org.utbot.cpp.clion.plugin.assertAllFilesNotEmptyRecursively
 import org.utbot.cpp.clion.plugin.assertFileOrDirExists
 import org.utbot.cpp.clion.plugin.assertTestFilesExist
 import org.utbot.cpp.clion.plugin.settings.settings
 
+@Disabled
 class GenerateForFileTest : BaseGenerationTestCase() {
     fun doTest(relativeFilePath: String, compiler: CppCompiler, isVerboseMode: Boolean) {
         Logger.info("Testing generate for file with file: $relativeFilePath, compiler: ${compiler.name}, verboseMode: $isVerboseMode")
@@ -24,11 +30,11 @@ class GenerateForFileTest : BaseGenerationTestCase() {
 
     @Test
     fun `test generate for file with verbose mode`() {
-        doTest("/lib/basic_functions.c", Clang, true)
+        doTest("/lib/basic_functions.c", Clang(), true)
     }
 
     @Test
     fun `test generate for file with non-verbose mode`() {
-        doTest("/lib/basic_functions.c", Clang, false)
+        doTest("/lib/basic_functions.c", Clang(), false)
     }
 }
