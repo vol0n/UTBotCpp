@@ -10,6 +10,10 @@
 #include <unistd.h>
 
 namespace Paths {
+    bool testInputFile(const std::string &fileName) {
+        return fileName == "A" || fileName == "B" || fileName == "C";
+    }
+
     static fs::path getHomeDir() {
         const char *homeDir;
         if ((homeDir = getenv("HOME")) == nullptr) {
@@ -141,13 +145,11 @@ namespace Paths {
             "assert",
             "bad_vector_access",
             "free",
-            "model",
             "overflow",
             "undefined_behavior",
             "ptr",
             "readonly",
             "reporterror",
-            "user",
             "uncaught_exception",
             "unexpected_exception"
         };
@@ -224,6 +226,11 @@ namespace Paths {
 
     fs::path getPathDirRelativeToTestDir(const utbot::ProjectContext &projectContext, const fs::path &sourceFilePath) {
         return projectContext.testDirPath / getRelativeDirPath(projectContext, sourceFilePath);
+    }
+
+    fs::path getPathDirRelativeToBuildDir(const utbot::ProjectContext &projectContext,
+                                          const fs::path &sourceFilePath) {
+        return fs::relative(sourceFilePath.parent_path(), Paths::getUTBotBuildDir(projectContext));
     }
 
     fs::path getRecompiledDir(const utbot::ProjectContext &projectContext) {
